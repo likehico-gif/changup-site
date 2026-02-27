@@ -814,6 +814,9 @@ footer{background:var(--navy-dark);color:rgba(255,255,255,.35);font-size:12px;pa
       <div class="sec-sub">수익성과 실현가능성을 분리해 분석합니다. 이 두 점수의 차이가 핵심 리스크입니다.</div>
     </div>
 
+    <!-- 실제 공공데이터 결과 박스 -->
+    <div id="realDataBox" style="display:none;"></div>
+
     <!-- v6: 이중 점수 -->
     <div class="dual-score-grid" id="dualScoreGrid"></div>
     <div id="dualScoreGapWarning"></div>
@@ -1189,6 +1192,15 @@ function renderStep2(){
   const gap=profitS-feasibleS;
   document.getElementById('step2Title').innerHTML=`${d.icon} ${selectedArea} ${selectedBiz} — 리스크 탐지 결과`;
 
+  // 실제 API 데이터 연동 (좌표가 있을 때)
+  const realBox = document.getElementById('realDataBox');
+  if(realBox) { realBox.innerHTML=''; realBox.style.display='none'; }
+  if(selectedCoords && selectedCoords.lat) {
+    fetchRealAnalysis(selectedCoords.lat, selectedCoords.lng, selectedBiz)
+      .then(data => { if(data) applyRealDataToStep2(data); })
+      .catch(()=>{});
+  }
+
   /* v6: 이중 점수 */
   const feasibleCls=feasibleS<50?'feasible-card':feasibleS<65?'feasible-card-ok':'feasible-card-safe';
   document.getElementById('dualScoreGrid').innerHTML=`
@@ -1419,6 +1431,72 @@ document.getElementById('bizInput').addEventListener('keydown',e=>{if(e.key==='E
 document.getElementById('areaInput').addEventListener('keydown',e=>{if(e.key==='Enter')runAnalysis()});
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
 
+/* ── 실제 공공데이터 API 연동 ── */
+let realApiData = null; // 실제 API 결과 저장
+
+async function fetchRealAnalysis(lat, lng, bizType) {
+  try {
+    const params = new URLSearchParams({ lat, lng, bizType: bizType || '', radius: '500' });
+    const res = await fetch(`/api/analyze?${params}`);
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (e) { console.warn('실제 API 호출 실패, 기본 데이터 사용:', e); return null; }
+}
+
+function applyRealDataToStep2(data) {
+  if (!data || !data.success) return;
+  realApiData = data;
+
+  // 실제 경쟁 업소 수 표시
+  const { analysis, stores, landuse, tradeArea } = data;
+
+  // 경고 배너 (용도지역 위반)
+  if (!analysis.canOperate && analysis.regulationWarning) {
+    const banner = document.getElementById('criticalBanner');
+    if (banner) {
+      banner.innerHTML = `<div class="critical-global-banner"><span class="cgb-icon">🚨</span><span class="cgb-text">${analysis.regulationWarning}</span></div>`;
+      banner.style.display = 'block';
+    }
+  }
+
+  // 실제 데이터 인포박스 삽입
+  const realBox = document.getElementById('realDataBox');
+  if (realBox) {
+    const topCats = stores.topCategories.slice(0, 3).map(c =>
+      `<span style="background:#e2e8f0;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;">${c.name} ${c.count}개</span>`
+    ).join(' ');
+
+    realBox.innerHTML = `
+      <div style="background:#0f172a;border:1px solid rgba(52,211,153,0.3);border-radius:10px;padding:16px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;">
+          <span style="background:rgba(52,211,153,0.15);color:#34d399;font-size:10px;font-weight:800;padding:2px 8px;border-radius:4px;">🛰️ 실시간 공공데이터</span>
+          <span style="font-size:11px;color:rgba(255,255,255,0.3);">소상공인진흥공단 + 국토교통부</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;">
+          <div style="text-align:center;padding:10px;background:rgba(255,255,255,0.04);border-radius:8px;">
+            <div style="font-size:24px;font-weight:900;color:#fff;">${stores.totalCount}<span style="font-size:12px;color:rgba(255,255,255,0.4);">개</span></div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:2px;">반경 500m 상가</div>
+          </div>
+          <div style="text-align:center;padding:10px;background:rgba(255,255,255,0.04);border-radius:8px;">
+            <div style="font-size:24px;font-weight:900;color:${analysis.competitionLevel==='높음'||analysis.competitionLevel==='매우높음'?'#f87171':'#34d399'}">${analysis.competitionLevel}</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:2px;">경쟁 강도</div>
+          </div>
+          <div style="text-align:center;padding:10px;background:rgba(255,255,255,0.04);border-radius:8px;">
+            <div style="font-size:16px;font-weight:900;color:${analysis.regulationGrade==='불가'?'#f87171':analysis.regulationGrade==='최적'?'#34d399':'#fbbf24'}">${landuse.zoneType||'확인중'}</div>
+            <div style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:2px;">용도지역</div>
+          </div>
+        </div>
+        ${topCats ? `<div style="display:flex;gap:6px;flex-wrap:wrap;">${topCats}</div>` : ''}
+        ${tradeArea.tradeAreaName ? `<div style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.4);">📍 ${tradeArea.tradeAreaName} 상권</div>` : ''}
+      </div>
+    `;
+    realBox.style.display = 'block';
+  }
+}
+
+// 실제 위치 좌표 저장 (지도 선택 시)
+let selectedCoords = null;
+
 /* ── 카카오맵 모달 ── */
 let kakaoMap = null;
 let kakaoMarker = null;
@@ -1525,6 +1603,7 @@ function confirmAddress() {
   const displayName = document.getElementById('mapSearchInput').value.trim() || selectedAddrFull;
   document.getElementById('areaInput').value = displayName;
   selectedArea = displayName;
+  if (selectedLatLng) selectedCoords = { lat: selectedLatLng.getLat(), lng: selectedLatLng.getLng() };
   closeMapModal();
   showToast('📍 지역이 선택되었습니다: ' + displayName);
 }
