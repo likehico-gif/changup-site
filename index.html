@@ -1937,7 +1937,7 @@ async function generateReport(tier) {
 }
 
 /* ── 실제 공공데이터 API 연동 ── */
-let realApiData = null; // 실제 API 결과 저장
+let realApiData = null;
 
 async function fetchRealAnalysis(lat, lng, bizType) {
   try {
@@ -1948,28 +1948,184 @@ async function fetchRealAnalysis(lat, lng, bizType) {
   } catch (e) { console.warn('실제 API 호출 실패, 기본 데이터 사용:', e); return null; }
 }
 
+/* ─────────────────────────────────────────────────────────────
+   실제 API 데이터 → 점수 재계산 (근거 기반 스코어링 엔진)
+
+   [경쟁강도] 소상공인진흥공단 반경500m 동종업소 수 기준
+   [입지점수] 국토교통부 VWorld 용도지역 분류 기준
+   [규제점수] canOperate + regulationGrade 기준
+   [수익성]   경쟁 과밀 시 하향 보정
+───────────────────────────────────────────────────────────── */
+function computeRealScores(d, apiData) {
+  if (!apiData || !apiData.success) return d;
+  const { analysis, stores, landuse } = apiData;
+  const nd = Object.assign({}, d, { _evidence: {}, _realDataApplied: true });
+
+  // ── 1. 경쟁강도 (competitionScore) ──────────────────────
+  // 높을수록 유리(경쟁 적음). 동종 업소 수 기반.
+  const sameCount = stores.sameTypeCount ?? 0;
+  const totalCount = stores.totalCount ?? 0;
+  let cs, ce;
+  if (sameCount > 0) {
+    // 동종 업소 카테고리 코드 매핑 성공 → 정확한 경쟁도
+    if      (sameCount >= 16) { cs = 8;  ce = `동종 ${sameCount}개 · 포화`; }
+    else if (sameCount >= 10) { cs = 22; ce = `동종 ${sameCount}개 · 극심`; }
+    else if (sameCount >= 6)  { cs = 38; ce = `동종 ${sameCount}개 · 과밀`; }
+    else if (sameCount >= 3)  { cs = 56; ce = `동종 ${sameCount}개 · 보통`; }
+    else if (sameCount >= 1)  { cs = 74; ce = `동종 ${sameCount}개 · 저경쟁`; }
+    else                      { cs = 82; ce = `동종 0개 · 독점 가능`; }
+  } else {
+    // 카테고리 미매핑 → 전체 상가 수로 대체 추정
+    if      (totalCount >= 100) { cs = 18; ce = `전체상가 ${totalCount}개 · 상권과밀`; }
+    else if (totalCount >= 50)  { cs = 38; ce = `전체상가 ${totalCount}개 · 밀집`; }
+    else if (totalCount >= 20)  { cs = 60; ce = `전체상가 ${totalCount}개 · 보통`; }
+    else                        { cs = 78; ce = `전체상가 ${totalCount}개 · 저밀`; }
+  }
+  nd.competitionScore = cs;
+  nd._evidence.competition = `소상공인진흥공단 API · ${ce}`;
+
+  // ── 2. 입지점수 (locationScore) ──────────────────────────
+  // 용도지역별 영업 적합도 (국토교통부 LURIS 분류 기준)
+  const zone = landuse.zoneType || '';
+  if (zone) {
+    let ls, le;
+    if (zone.includes('전용주거')) {
+      ls = 12; le = `${zone} · 상가 영업 불가`; nd.regulationFail = true;
+    } else if (zone.includes('일반상업') || zone.includes('근린상업') || zone.includes('유통상업')) {
+      ls = 92; le = `${zone} · 대부분 업종 최적`;
+    } else if (zone.includes('준주거') || zone.includes('준공업')) {
+      ls = 78; le = `${zone} · 대부분 허용`;
+    } else if (zone.includes('제3종')) {
+      ls = 66; le = `${zone} · 일부 제한`;
+    } else if (zone.includes('제2종')) {
+      ls = 55; le = `${zone} · 소규모 조건부`;
+    } else if (zone.includes('제1종')) {
+      ls = 42; le = `${zone} · 업종 제한`;
+    } else if (zone.includes('공업')) {
+      ls = 18; le = `${zone} · 상업시설 제한`; nd.regulationFail = true;
+    } else if (zone.includes('녹지') || zone.includes('관리') || zone.includes('농림')) {
+      ls = 10; le = `${zone} · 상업 불가`; nd.regulationFail = true;
+    } else {
+      ls = 62; le = `${zone} · 추가 확인 필요`;
+    }
+    nd.locationScore = ls;
+    nd._evidence.location = `VWorld API · ${le}`;
+  }
+
+  // ── 3. 규제점수 (regulationScore) ────────────────────────
+  // canOperate + regulationGrade (불가/주의/양호/최적/확인필요)
+  if (!analysis.canOperate) {
+    nd.regulationScore = 8; nd.regulationFail = true;
+    nd._evidence.regulation = `규제 API · 영업 불가: ${analysis.regulationWarning || '용도지역 위반'}`;
+  } else {
+    const grade = analysis.regulationGrade;
+    const rs = grade === '최적' ? 93 : grade === '양호' ? 80 : grade === '주의' ? 55 : 64;
+    nd.regulationScore = rs;
+    nd._evidence.regulation = `LURIS API · 규제 적합도 "${grade}"`;
+  }
+
+  // ── 4. 수익성 보정 (경쟁 과밀 시 하향) ────────────────────
+  // 동종 업소 과밀 → 매출 실현 어려움 → profitScore 감산
+  const pa = cs <= 22 ? -15 : cs <= 38 ? -10 : cs <= 56 ? -5 : 0;
+  nd.profitScore = Math.max(10, Math.min(100, d.profitScore + pa));
+  nd._evidence.profit = pa < 0
+    ? `경쟁 과밀 보정 ${pa}점 (경쟁강도 ${cs}점 기반)`
+    : '소상공인진흥공단 업종별 평균 매출 기준';
+  nd._evidence.revenue = '소상공인진흥공단 업종별 평균 매출 통계';
+
+  return nd;
+}
+
 function applyRealDataToStep2(data) {
   if (!data || !data.success) return;
   realApiData = data;
-
-  // 실제 경쟁 업소 수 표시
   const { analysis, stores, landuse, tradeArea } = data;
 
-  // 경고 배너 (용도지역 위반)
-  if (!analysis.canOperate && analysis.regulationWarning) {
-    const banner = document.getElementById('criticalBanner');
-    if (banner) {
-      banner.innerHTML = `<div class="critical-global-banner"><span class="cgb-icon">🚨</span><span class="cgb-text">${analysis.regulationWarning}</span></div>`;
-      banner.style.display = 'block';
+  // ── 점수 재계산 후 UI 업데이트 ─────────────────────────
+  if (selectedBizData) {
+    selectedBizData = computeRealScores(selectedBizData, data);
+    const d2 = selectedBizData;
+    const ts2 = calculateRiskScore(d2);
+    const gi2 = getGradeInfo(ts2, d2.regulationFail);
+    const profitS2 = getProfitScore(d2);
+    const feasibleS2 = getFeasibleScore(d2);
+    const gap2 = profitS2 - feasibleS2;
+    const ev = d2._evidence || {};
+
+    // 수익성 / 실현가능성 카드
+    const fCls = feasibleS2<50?'feasible-card':feasibleS2<65?'feasible-card-ok':'feasible-card-safe';
+    document.getElementById('dualScoreGrid').innerHTML = `
+      <div class="dual-score-card profit-card">
+        <div class="ds-label">수익성 점수 <span style="font-size:9px;background:#34d399;color:#000;padding:1px 5px;border-radius:3px;font-weight:700;">실시간</span></div>
+        <div class="ds-score">${profitS2}</div>
+        <div class="ds-badge" style="background:var(--green);">매출 잠재력 ${profitS2>=70?'높음':'보통'}</div>
+        ${ev.profit?`<div style="font-size:9px;color:var(--muted);margin-top:4px;">📊 ${ev.profit}</div>`:''}
+      </div>
+      <div class="dual-score-card ${fCls}">
+        <div class="ds-label">실현 가능성 <span style="font-size:9px;background:#34d399;color:#000;padding:1px 5px;border-radius:3px;font-weight:700;">실시간</span></div>
+        <div class="ds-score">${feasibleS2}</div>
+        <div class="ds-badge" style="background:${feasibleS2<50?'var(--red)':feasibleS2<65?'var(--yellow)':'var(--green)'};">${feasibleS2<50?'법규·경쟁 리스크':feasibleS2<65?'일부 리스크':'실현 가능'}</div>
+      </div>`;
+    document.getElementById('dualScoreGapWarning').innerHTML = gap2>=20?`
+      <div class="ds-gap-warning"><div class="ds-gap-icon">⚡</div>
+      <div class="ds-gap-text"><strong>격차 경고 (${gap2}점):</strong> 수익성은 높지만 실현 가능성이 낮습니다. 계약 전 법규 검토 필수.</div></div>`:'';
+
+    // 4대 지표 (근거 포함)
+    const qd2 = [
+      {l:'입지', s:d2.locationScore, f:false, ev:ev.location||''},
+      {l:'경쟁 우위', s:d2.competitionScore, f:false, ev:ev.competition||''},
+      {l:'규제 적합', s:d2.regulationScore, f:d2.regulationFail, ev:ev.regulation||''},
+      {l:'수익 전망', s:d2.revenueScore, f:false, ev:ev.revenue||''}
+    ];
+    document.getElementById('quadScores').innerHTML = qd2.map(q => {
+      const c = q.f?'var(--red)':q.s>=70?'var(--green)':q.s>=50?'var(--yellow)':'var(--red)';
+      const g = q.f?'FAIL':q.s>=80?'우수':q.s>=60?'양호':q.s>=40?'보통':'미흡';
+      return `<div class="quad-item${q.f?' fatal':''}">
+        <div class="quad-label">${q.l} <span style="font-size:9px;background:#34d399;color:#000;padding:1px 4px;border-radius:3px;">실시간</span></div>
+        <div class="quad-score" style="color:${c}">${q.f?'0':q.s}</div>
+        <div class="quad-grade" style="color:${c}">${g}</div>
+        ${q.ev?`<div style="font-size:9px;color:var(--muted);margin-top:3px;line-height:1.4;">📊 ${q.ev}</div>`:''}
+        ${q.f?'<div class="fatal-badge">⛔ 허가 불가</div>':''}
+      </div>`;
+    }).join('');
+
+    // 종합 점수
+    const diff2 = ts2 - (d2.areaAvgScore||60);
+    document.getElementById('totalScoreArea').innerHTML = `
+      <div style="background:${gi2.cls==='safe'?'var(--green-light)':gi2.cls==='caution'?'var(--yellow-light)':'var(--red-light)'};border:2px solid ${gi2.cls==='safe'?'#86efac':gi2.cls==='caution'?'#fcd34d':'#fca5a5'};border-radius:var(--r-lg);text-align:center;padding:22px 20px;${gi2.cls==='danger'?'animation:dangerGlow 2s ease infinite':''}">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:4px;">종합 창업 안전 점수 <span style="font-size:9px;background:#34d399;color:#000;padding:1px 6px;border-radius:4px;">실시간 반영</span></div>
+        <div style="font-size:52px;font-weight:900;color:${gi2.cls==='safe'?'var(--green)':gi2.cls==='caution'?'var(--yellow)':'var(--red)'};line-height:1">${ts2}</div>
+        <div class="ts-badge ${gi2.cls}" style="margin-top:8px">${gi2.emoji} ${gi2.grade}</div>
+      </div>
+      <div class="avg-compare-row">
+        <span class="avg-compare-label">지역 평균 비교</span>
+        <div class="avg-compare-items">
+          <div class="avg-compare-item"><span class="avg-dot me"></span><span class="avg-compare-text">내 분석: ${ts2}점</span></div>
+          <div class="avg-compare-item"><span class="avg-dot avg"></span><span class="avg-compare-text">${d2.areaName||'지역'} 평균: ${d2.areaAvgScore}점</span></div>
+        </div>
+        <span class="avg-compare-badge ${diff2>=0?'up':'down'}">${diff2>=0?'▲ 평균 초과':'▼ 평균 미달'}</span>
+      </div>`;
+
+    // regulationFail 배너
+    if (d2.regulationFail) {
+      const banner = document.getElementById('criticalBanner');
+      if (banner) {
+        banner.innerHTML = `<div class="critical-global-banner"><span class="cgb-icon">🚨</span><span class="cgb-text">${analysis.regulationWarning||'현재 위치: 영업 불가 용도지역 — 보증금 계약 전 반드시 확인'}</span></div>`;
+        banner.style.display = 'block';
+      }
     }
   }
 
-  // 실제 데이터 인포박스 삽입
+  // ── 실시간 공공데이터 박스 ────────────────────────────────
   const realBox = document.getElementById('realDataBox');
   if (realBox) {
+    const sameCount = stores.sameTypeCount ?? 0;
     const topCats = stores.topCategories.slice(0, 3).map(c =>
-      `<span style="background:#e2e8f0;border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;">${c.name} ${c.count}개</span>`
+      `<span style="background:rgba(255,255,255,.1);border-radius:4px;padding:2px 8px;font-size:11px;font-weight:700;color:#fff;">${c.name} ${c.count}개</span>`
     ).join(' ');
+
+    const compColor = analysis.competitionLevel==='높음'||analysis.competitionLevel==='매우높음' ? '#f87171' : '#34d399';
+    const zoneColor = analysis.regulationGrade==='불가' ? '#f87171' : analysis.regulationGrade==='최적' ? '#34d399' : '#fbbf24';
 
     realBox.innerHTML = `
       <div style="background:#0f172a;border:1px solid rgba(52,211,153,0.3);border-radius:10px;padding:16px;margin-bottom:16px;">
@@ -1977,22 +2133,27 @@ function applyRealDataToStep2(data) {
           <span style="background:rgba(52,211,153,0.15);color:#34d399;font-size:10px;font-weight:800;padding:2px 8px;border-radius:4px;">🛰️ 실시간 공공데이터</span>
           <span style="font-size:11px;color:rgba(255,255,255,0.3);">소상공인진흥공단 + 국토교통부</span>
         </div>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;">
-          <div style="text-align:center;padding:10px;background:rgba(255,255,255,0.04);border-radius:8px;">
-            <div style="font-size:24px;font-weight:900;color:#fff;">${stores.totalCount}<span style="font-size:12px;color:rgba(255,255,255,0.4);">개</span></div>
-            <div style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:2px;">반경 500m 상가</div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px;">
+          <div style="text-align:center;padding:10px 6px;background:rgba(255,255,255,0.04);border-radius:8px;">
+            <div style="font-size:22px;font-weight:900;color:#fff;">${stores.totalCount}<span style="font-size:11px;color:rgba(255,255,255,.4);">개</span></div>
+            <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px;">반경 500m 상가</div>
           </div>
-          <div style="text-align:center;padding:10px;background:rgba(255,255,255,0.04);border-radius:8px;">
-            <div style="font-size:24px;font-weight:900;color:${analysis.competitionLevel==='높음'||analysis.competitionLevel==='매우높음'?'#f87171':'#34d399'}">${analysis.competitionLevel}</div>
-            <div style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:2px;">경쟁 강도</div>
+          <div style="text-align:center;padding:10px 6px;background:rgba(255,255,255,0.04);border-radius:8px;">
+            <div style="font-size:14px;font-weight:900;color:#fff;">${sameCount > 0 ? sameCount+'개' : '—'}</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px;">동종 업소</div>
           </div>
-          <div style="text-align:center;padding:10px;background:rgba(255,255,255,0.04);border-radius:8px;">
-            <div style="font-size:16px;font-weight:900;color:${analysis.regulationGrade==='불가'?'#f87171':analysis.regulationGrade==='최적'?'#34d399':'#fbbf24'}">${landuse.zoneType||'확인중'}</div>
-            <div style="font-size:10px;color:rgba(255,255,255,0.4);margin-top:2px;">용도지역</div>
+          <div style="text-align:center;padding:10px 6px;background:rgba(255,255,255,0.04);border-radius:8px;">
+            <div style="font-size:14px;font-weight:900;color:${compColor}">${analysis.competitionLevel}</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px;">경쟁 강도</div>
+          </div>
+          <div style="text-align:center;padding:10px 6px;background:rgba(255,255,255,0.04);border-radius:8px;">
+            <div style="font-size:12px;font-weight:900;color:${zoneColor}">${landuse.zoneType||'확인중'}</div>
+            <div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px;">용도지역</div>
           </div>
         </div>
-        ${topCats ? `<div style="display:flex;gap:6px;flex-wrap:wrap;">${topCats}</div>` : ''}
-        ${tradeArea.tradeAreaName ? `<div style="margin-top:8px;font-size:11px;color:rgba(255,255,255,0.4);">📍 ${tradeArea.tradeAreaName} 상권</div>` : ''}
+        ${topCats ? `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;">${topCats}</div>` : ''}
+        ${tradeArea.tradeAreaName ? `<div style="font-size:11px;color:rgba(255,255,255,.4);">📍 ${tradeArea.tradeAreaName} 상권</div>` : ''}
+        <div style="margin-top:8px;font-size:10px;color:rgba(255,255,255,.25);">※ 위 데이터 기반으로 위 점수들이 실시간 재계산되었습니다</div>
       </div>
     `;
     realBox.style.display = 'block';
