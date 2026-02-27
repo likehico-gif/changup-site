@@ -1553,6 +1553,8 @@ function openMapModal(mode) {
       kakao.maps.event.addListener(kakaoMap, 'click', function(mouseEvent) {
         const latlng = mouseEvent.latLng;
         selectedLatLng = latlng;
+        if(selectedCoords === undefined) selectedCoords = null;
+        selectedCoords = { lat: latlng.getLat(), lng: latlng.getLng() };
         kakaoMarker.setPosition(latlng);
         kakaoMarker.setVisible(true);
         const geocoder = new kakao.maps.services.Geocoder();
@@ -1562,6 +1564,8 @@ function openMapModal(mode) {
               ? result[0].road_address.address_name
               : result[0].address.address_name;
             selectedAddrFull = addr;
+            // ✅ 검색창도 지도 클릭 주소로 업데이트
+            document.getElementById('mapSearchInput').value = addr;
             document.getElementById('selectedAddrText').textContent = '📍 ' + addr;
             enableMapConfirm();
           }
@@ -1590,8 +1594,10 @@ function searchMapPlace() {
       selectedLatLng = latlng;
       kakaoMarker.setPosition(latlng);
       kakaoMarker.setVisible(true);
-      selectedAddrFull = first.road_address_name || first.address_name || keyword;
-      document.getElementById('selectedAddrText').textContent = '📍 ' + first.place_name + ' (' + selectedAddrFull + ')';
+      selectedAddrFull = first.place_name || first.road_address_name || first.address_name || keyword;
+      // ✅ 검색 결과도 장소명으로 검색창 업데이트
+      document.getElementById('mapSearchInput').value = selectedAddrFull;
+      document.getElementById('selectedAddrText').textContent = '📍 ' + first.place_name + (first.road_address_name ? ' — ' + first.road_address_name : '');
       enableMapConfirm();
     } else {
       showToast('검색 결과가 없습니다. 다른 키워드를 입력해보세요');
@@ -1600,12 +1606,14 @@ function searchMapPlace() {
 }
 
 function confirmAddress() {
-  const displayName = document.getElementById('mapSearchInput').value.trim() || selectedAddrFull;
+  // ✅ 항상 마지막으로 선택된 주소(selectedAddrFull) 사용
+  const displayName = selectedAddrFull || document.getElementById('mapSearchInput').value.trim();
+  if (!displayName) { showToast('먼저 지도에서 위치를 선택하거나 장소를 검색하세요'); return; }
   document.getElementById('areaInput').value = displayName;
   selectedArea = displayName;
   if (selectedLatLng) selectedCoords = { lat: selectedLatLng.getLat(), lng: selectedLatLng.getLng() };
   closeMapModal();
-  showToast('📍 지역이 선택되었습니다: ' + displayName);
+  showToast('📍 선택 완료: ' + displayName);
 }
 
 function analyzeFromMap() {
