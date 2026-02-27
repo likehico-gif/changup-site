@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>창업지도 — 계약 전 보증금 보호 검증기</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=40473ccb42230e6663951fdb2243a924&libraries=services"></script>
 <style>
 :root {
   --navy: #1b2a4a; --navy-dark: #111d36; --navy-light: #243656;
@@ -657,6 +658,7 @@ footer{background:var(--navy-dark);color:rgba(255,255,255,.35);font-size:12px;pa
       <div class="search-field">
         <span class="sf-icon">📍</span>
         <input type="text" id="areaInput" placeholder="희망 지역 (예: 강남역, 홍대, 성수동...)">
+        <button onclick="openMapModal()" title="지도에서 선택" style="background:none;border:none;cursor:pointer;font-size:18px;padding:0 4px;color:var(--blue);transition:transform .15s;" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">🗺️</button>
       </div>
       <button class="search-btn" onclick="runAnalysis()">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -1416,6 +1418,111 @@ function restart(){
 document.getElementById('bizInput').addEventListener('keydown',e=>{if(e.key==='Enter')runAnalysis()});
 document.getElementById('areaInput').addEventListener('keydown',e=>{if(e.key==='Enter')runAnalysis()});
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)}
+
+/* ── 카카오맵 모달 ── */
+let kakaoMap = null;
+let kakaoMarker = null;
+let selectedLatLng = null;
+let selectedAddrFull = '';
+
+function openMapModal() {
+  document.getElementById('mapModal').style.display = 'flex';
+  setTimeout(() => {
+    if (!kakaoMap) {
+      const center = new kakao.maps.LatLng(37.5665, 126.9780); // 서울 중심
+      kakaoMap = new kakao.maps.Map(document.getElementById('kakaoMapDiv'), {
+        center: center,
+        level: 5
+      });
+      kakaoMarker = new kakao.maps.Marker({ position: center, map: kakaoMap });
+      kakaoMarker.setVisible(false);
+
+      // 지도 클릭 시 주소 변환
+      kakao.maps.event.addListener(kakaoMap, 'click', function(mouseEvent) {
+        const latlng = mouseEvent.latLng;
+        selectedLatLng = latlng;
+        kakaoMarker.setPosition(latlng);
+        kakaoMarker.setVisible(true);
+        const geocoder = new kakao.maps.services.Geocoder();
+        geocoder.coord2Address(latlng.getLng(), latlng.getLat(), function(result, status) {
+          if (status === kakao.maps.services.Status.OK) {
+            const addr = result[0].road_address
+              ? result[0].road_address.address_name
+              : result[0].address.address_name;
+            selectedAddrFull = addr;
+            document.getElementById('selectedAddrText').textContent = '📍 ' + addr;
+            const btn = document.getElementById('confirmAddrBtn');
+            btn.disabled = false; btn.style.opacity = '1';
+          }
+        });
+      });
+    } else {
+      kakaoMap.relayout();
+    }
+  }, 100);
+}
+
+function closeMapModal() {
+  document.getElementById('mapModal').style.display = 'none';
+}
+
+function searchMapPlace() {
+  const keyword = document.getElementById('mapSearchInput').value.trim();
+  if (!keyword) { showToast('검색어를 입력해주세요'); return; }
+  const ps = new kakao.maps.services.Places();
+  ps.keywordSearch(keyword, function(data, status) {
+    if (status === kakao.maps.services.Status.OK) {
+      const first = data[0];
+      const latlng = new kakao.maps.LatLng(first.y, first.x);
+      kakaoMap.setCenter(latlng);
+      kakaoMap.setLevel(4);
+      selectedLatLng = latlng;
+      kakaoMarker.setPosition(latlng);
+      kakaoMarker.setVisible(true);
+      selectedAddrFull = first.road_address_name || first.address_name || keyword;
+      document.getElementById('selectedAddrText').textContent = '📍 ' + first.place_name + ' (' + selectedAddrFull + ')';
+      const btn2 = document.getElementById('confirmAddrBtn');
+      btn2.disabled = false; btn2.style.opacity = '1';
+    } else {
+      showToast('검색 결과가 없습니다. 다른 키워드를 입력해보세요');
+    }
+  });
+}
+
+function confirmAddress() {
+  const displayName = document.getElementById('mapSearchInput').value.trim() || selectedAddrFull;
+  document.getElementById('areaInput').value = displayName;
+  selectedArea = displayName;
+  closeMapModal();
+  showToast('📍 지역이 선택되었습니다: ' + displayName);
+}
+
+document.getElementById('mapSearchInput') && document.getElementById('mapSearchInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') searchMapPlace();
+});
 </script>
+
+<!-- 카카오맵 모달 -->
+<div id="mapModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;width:min(640px,96vw);max-height:92vh;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <!-- 헤더 -->
+    <div style="padding:16px 20px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;background:#1b2a4a;">
+      <div style="font-size:16px;font-weight:800;color:#fff;">🗺️ 지역 선택</div>
+      <button onclick="closeMapModal()" style="background:rgba(255,255,255,0.15);border:none;color:#fff;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+    <!-- 검색창 -->
+    <div style="padding:12px 16px;border-bottom:1px solid #e2e8f0;display:flex;gap:8px;background:#f8fafc;">
+      <input type="text" id="mapSearchInput" placeholder="장소 검색 (예: 강남역, 홍대입구, 성수동...)" style="flex:1;border:1.5px solid #e2e8f0;border-radius:8px;padding:10px 14px;font-size:14px;font-family:inherit;outline:none;" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
+      <button onclick="searchMapPlace()" style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:10px 18px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;">검색</button>
+    </div>
+    <!-- 지도 -->
+    <div id="kakaoMapDiv" style="height:380px;width:100%;"></div>
+    <!-- 하단 선택 바 -->
+    <div style="padding:14px 16px;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:10px;background:#fff;">
+      <span id="selectedAddrText" style="font-size:13px;color:#64748b;flex:1;">📍 지도를 클릭하거나 장소를 검색하세요</span>
+      <button id="confirmAddrBtn" onclick="confirmAddress()" disabled style="background:#dc2626;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;opacity:0.5;transition:opacity .2s;" onmouseover="if(!this.disabled)this.style.background='#b91c1c'" onmouseout="this.style.background='#dc2626'">이 위치로 선택 →</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
