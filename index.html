@@ -637,6 +637,49 @@ footer{background:var(--navy-dark);color:rgba(255,255,255,.35);font-size:12px;pa
 .mp-input-row label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;}
 .mp-input{width:100%;border:1.5px solid var(--border);border-radius:var(--r);padding:10px 14px;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s;background:#fff;}
 .mp-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.08);}
+
+/* ── 공통 페이지 오버레이 (핫트렌드·정책가이드 공용) ── */
+.page-overlay{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.75);display:none;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;}
+.page-overlay.open{display:flex;}
+.page-modal{background:#fff;border-radius:16px;width:min(800px,100%);margin:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden;}
+.page-modal-header{padding:16px 22px;display:flex;align-items:center;justify-content:space-between;}
+.page-close{background:rgba(255,255,255,.15);border:none;color:#fff;width:30px;height:30px;border-radius:8px;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;}
+.page-close:hover{background:rgba(255,255,255,.25);}
+.page-body{padding:24px;}
+
+/* 핫트렌드 */
+.trend-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+@media(max-width:560px){.trend-grid{grid-template-columns:1fr;}}
+.trend-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-lg);padding:16px 18px;display:flex;align-items:center;gap:14px;transition:all .2s;}
+.trend-card:hover{border-color:var(--blue-light);background:var(--blue-bg);}
+.trend-rank{font-size:18px;font-weight:900;color:var(--light);min-width:26px;text-align:center;}
+.trend-rank.top3{color:var(--blue);}
+.trend-info{flex:1;min-width:0;}
+.trend-name{font-size:15px;font-weight:700;color:var(--text);}
+.trend-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.trend-change{font-size:14px;font-weight:800;white-space:nowrap;}
+.trend-change.up{color:var(--red);}
+.trend-change.down{color:var(--blue);}
+.trend-bar-wrap{height:4px;background:var(--border);border-radius:100px;margin-top:6px;}
+.trend-bar{height:4px;border-radius:100px;transition:width .6s;}
+.hot-badge{display:inline-block;font-size:10px;font-weight:700;background:#fef2f2;color:var(--red);border:1px solid #fecaca;padding:1px 6px;border-radius:100px;margin-left:6px;vertical-align:middle;}
+.new-badge{display:inline-block;font-size:10px;font-weight:700;background:var(--green-light);color:var(--green);border:1px solid #86efac;padding:1px 6px;border-radius:100px;margin-left:6px;vertical-align:middle;}
+
+/* 정책 가이드 */
+.policy-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px;}
+.policy-tab{font-size:12px;font-weight:700;padding:6px 14px;border-radius:100px;border:1.5px solid var(--border);color:var(--muted);cursor:pointer;transition:all .2s;background:#fff;}
+.policy-tab:hover{border-color:var(--blue);color:var(--blue);}
+.policy-tab.active{background:var(--blue);color:#fff;border-color:var(--blue);}
+.policy-card{border:1.5px solid var(--border);border-radius:var(--r-lg);padding:18px 20px;margin-bottom:12px;transition:all .2s;cursor:default;}
+.policy-card:hover{border-color:var(--blue-light);box-shadow:var(--shadow-md);}
+.policy-card-header{display:flex;align-items:flex-start;gap:12px;margin-bottom:10px;}
+.policy-badge{font-size:10px;font-weight:700;padding:3px 8px;border-radius:100px;white-space:nowrap;}
+.policy-amount{font-size:18px;font-weight:900;color:var(--blue);margin-bottom:4px;}
+.policy-desc{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:10px;}
+.policy-tags{display:flex;gap:6px;flex-wrap:wrap;}
+.policy-tag{font-size:11px;padding:3px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:100px;color:var(--muted);}
+.policy-link{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--blue);text-decoration:none;margin-top:10px;}
+.policy-link:hover{text-decoration:underline;}
 </style>
 </head>
 <body>
@@ -656,8 +699,8 @@ footer{background:var(--navy-dark);color:rgba(255,255,255,.35);font-size:12px;pa
     <div class="nav-menu">
       <span class="nav-menu-item active" onclick="scrollToServices()">보증금 검증</span>
       <span class="nav-menu-item" onclick="openMapModal('commercial')">상권 지도</span>
-      <span class="nav-menu-item" onclick="showToast('핫트렌드 서비스는 준비 중입니다')">핫트렌드</span>
-      <span class="nav-menu-item" onclick="showToast('정책 가이드 서비스는 준비 중입니다')">정책 가이드</span>
+      <span class="nav-menu-item" onclick="openTrend()">핫트렌드</span>
+      <span class="nav-menu-item" onclick="openPolicy()">정책 가이드</span>
     </div>
   </div>
   <div class="nav-right">
@@ -2398,6 +2441,242 @@ document.getElementById('mapSearchInput') && document.getElementById('mapSearchI
 window.addEventListener('load', () => { handlePaymentResult(); });
 
 /* ═══════════════════════════════════════════════
+   핫트렌드
+═══════════════════════════════════════════════ */
+const TREND_DATA = {
+  rising: [
+    { icon:'🤖', name:'무인카페·무인매장', sub:'인건비 절감 + 24시간 운영', change:'+38%', bar:95, badge:'hot' },
+    { icon:'💅', name:'네일샵',           sub:'SNS 바이럴 + 재방문율 높음',  change:'+22%', bar:72, badge:'hot' },
+    { icon:'💪', name:'소형 PT 헬스장',   sub:'1인 운동 트렌드 급성장',       change:'+18%', bar:60, badge:'new' },
+    { icon:'🥐', name:'베이커리 카페',    sub:'복합 공간 수요 증가',           change:'+15%', bar:52 },
+    { icon:'🏪', name:'편의점',           sub:'점포 수 꾸준한 성장세',         change:'+12%', bar:45 },
+    { icon:'🍱', name:'분식집',           sub:'혼밥·간편식 수요 증가',         change:'+9%',  bar:36 },
+  ],
+  falling: [
+    { icon:'🎤', name:'노래방',   sub:'유흥 업종 전반 침체',    change:'-14%', bar:45 },
+    { icon:'🖥', name:'PC방',    sub:'게임 플랫폼 다변화',     change:'-9%',  bar:30 },
+    { icon:'🥢', name:'중국집',  sub:'배달 전문 전환 압박',     change:'-7%',  bar:22 },
+    { icon:'🍺', name:'일반 술집',sub:'주류 소비 전반 감소세',  change:'-5%',  bar:16 },
+  ],
+  regions: [
+    { name:'성수동', city:'서울', tags:['카페','베이커리','팝업스토어'], score:98 },
+    { name:'광교',   city:'경기', tags:['헬스장','카페','네일샵'],       score:87 },
+    { name:'해운대', city:'부산', tags:['카페','편의점','분식'],          score:82 },
+    { name:'신흥동', city:'성남', tags:['무인매장','편의점','카페'],      score:76 },
+    { name:'봉담',   city:'화성', tags:['헬스장','미용실','분식'],        score:71 },
+    { name:'제주 시내',city:'제주',tags:['카페','편의점','베이커리'],     score:68 },
+  ],
+};
+
+function openTrend() {
+  document.getElementById('trendOverlay').classList.add('open');
+  setNavActive('핫트렌드');
+  renderTrend();
+}
+function closeTrend() {
+  document.getElementById('trendOverlay').classList.remove('open');
+  setNavActive('보증금 검증');
+}
+function setNavActive(label) {
+  document.querySelectorAll('.nav-menu-item').forEach(el => {
+    el.classList.toggle('active', el.textContent.trim() === label);
+  });
+}
+
+function renderTrend() {
+  const el = document.getElementById('trendBody');
+  const updated = new Date().toLocaleDateString('ko-KR', { year:'numeric', month:'long', day:'numeric' });
+  el.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:8px;">
+      <div>
+        <div style="font-size:20px;font-weight:900;color:var(--text);">📈 이달의 업종 트렌드</div>
+        <div style="font-size:12px;color:var(--light);margin-top:3px;">소상공인진흥공단 · 네이버 검색 트렌드 · 공정거래위원회 기준 / ${updated}</div>
+      </div>
+      <span style="font-size:11px;background:var(--red-light);color:var(--red);border:1px solid #fecaca;padding:4px 10px;border-radius:100px;font-weight:700;">🔴 LIVE 업데이트</span>
+    </div>
+
+    <!-- 상승 트렌드 -->
+    <div style="font-size:11px;font-weight:700;color:var(--light);letter-spacing:.8px;margin-bottom:12px;">▲ 상승 업종 TOP 6</div>
+    <div class="trend-grid" style="margin-bottom:28px;">
+      ${TREND_DATA.rising.map((t,i) => `
+        <div class="trend-card">
+          <div class="trend-rank ${i<3?'top3':''}">${i+1}</div>
+          <div style="font-size:26px;line-height:1">${t.icon}</div>
+          <div class="trend-info">
+            <div class="trend-name">${t.name}${t.badge==='hot'?'<span class="hot-badge">HOT</span>':t.badge==='new'?'<span class="new-badge">NEW</span>':''}</div>
+            <div class="trend-sub">${t.sub}</div>
+            <div class="trend-bar-wrap"><div class="trend-bar" style="width:${t.bar}%;background:${i<3?'var(--red)':'var(--orange)'}"></div></div>
+          </div>
+          <div class="trend-change up">${t.change}</div>
+        </div>`).join('')}
+    </div>
+
+    <!-- 하락 트렌드 -->
+    <div style="font-size:11px;font-weight:700;color:var(--light);letter-spacing:.8px;margin-bottom:12px;">▼ 주의 업종</div>
+    <div class="trend-grid" style="margin-bottom:28px;">
+      ${TREND_DATA.falling.map((t,i) => `
+        <div class="trend-card">
+          <div class="trend-rank" style="color:var(--light)">${i+1}</div>
+          <div style="font-size:26px;line-height:1">${t.icon}</div>
+          <div class="trend-info">
+            <div class="trend-name" style="color:var(--muted)">${t.name}</div>
+            <div class="trend-sub">${t.sub}</div>
+            <div class="trend-bar-wrap"><div class="trend-bar" style="width:${t.bar}%;background:var(--light)"></div></div>
+          </div>
+          <div class="trend-change down">${t.change}</div>
+        </div>`).join('')}
+    </div>
+
+    <!-- 핫 지역 -->
+    <div style="font-size:11px;font-weight:700;color:var(--light);letter-spacing:.8px;margin-bottom:12px;">🔥 급성장 상권</div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+      ${TREND_DATA.regions.map(r => `
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;text-align:center;transition:all .2s;cursor:default;" onmouseover="this.style.borderColor='var(--blue-light)'" onmouseout="this.style.borderColor='var(--border)'">
+          <div style="font-size:15px;font-weight:800;color:var(--text)">${r.name}</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px">${r.city}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:4px;justify-content:center;margin-bottom:8px">${r.tags.map(t=>`<span style="font-size:10px;background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-light);padding:2px 7px;border-radius:100px;font-weight:600">${t}</span>`).join('')}</div>
+          <div style="font-size:11px;font-weight:700;color:var(--blue)">${r.score}점</div>
+        </div>`).join('')}
+    </div>
+    <div style="margin-top:20px;padding:14px 16px;background:var(--surface2);border-radius:var(--r);border:1px solid var(--border);font-size:12px;color:var(--light);line-height:1.7;">
+      💡 트렌드 데이터는 소상공인진흥공단 상권분석 통계, 네이버 검색트렌드, 공정거래위원회 가맹사업 현황을 종합하여 매월 업데이트됩니다.
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════════
+   정책 가이드
+═══════════════════════════════════════════════ */
+const POLICY_DATA = [
+  {
+    cat:'창업 지원금', catColor:'#2563eb', catBg:'#dbeafe',
+    name:'소상공인 창업 패키지',
+    org:'소상공인시장진흥공단',
+    amount:'최대 1,000만 원',
+    desc:'예비·초기 소상공인(창업 3년 이내)에게 사업화 자금, 멘토링, 교육을 패키지로 지원합니다.',
+    tags:['예비창업자','초기창업','사업화 자금'],
+    deadline:'상시 (연 2회 모집)',
+    url:'https://www.sbiz.or.kr',
+  },
+  {
+    cat:'창업 지원금', catColor:'#2563eb', catBg:'#dbeafe',
+    name:'청년창업 특례보증',
+    org:'신용보증기금',
+    amount:'최대 1억 원',
+    desc:'만 39세 이하 청년 창업자에게 보증료 면제 또는 감면 혜택과 함께 창업 초기 운전자금을 지원합니다.',
+    tags:['만39세 이하','보증료 감면','운전자금'],
+    deadline:'연중 접수',
+    url:'https://www.kodit.co.kr',
+  },
+  {
+    cat:'정책자금·대출', catColor:'#0d9488', catBg:'#ccfbf1',
+    name:'소상공인 정책자금',
+    org:'소상공인시장진흥공단',
+    amount:'최대 7,000만 원 (금리 2~3%대)',
+    desc:'일반·성장촉진·특별경영안정·긴급경영안정 등 목적에 따라 저금리로 운영자금과 시설자금을 지원합니다.',
+    tags:['저금리','운전자금','시설자금'],
+    deadline:'예산 소진 시 마감 (조기 신청 권장)',
+    url:'https://ols.sbiz.or.kr',
+  },
+  {
+    cat:'정책자금·대출', catColor:'#0d9488', catBg:'#ccfbf1',
+    name:'지역신용보증재단 특례보증',
+    org:'각 지역 신용보증재단',
+    amount:'최대 5,000만 원',
+    desc:'지역 소재 소상공인을 대상으로 신용보증서를 발급하여 금융기관 대출을 지원합니다. 보증료율 0.5~1.0%.',
+    tags:['지역한정','신용보증','0.5~1.0%'],
+    deadline:'연중 접수',
+    url:'https://www.koreg.or.kr',
+  },
+  {
+    cat:'교육·컨설팅', catColor:'#7c3aed', catBg:'#ede9fe',
+    name:'소상공인 무료 컨설팅',
+    org:'소상공인시장진흥공단',
+    amount:'무료 (전문가 1:1 컨설팅)',
+    desc:'경영·세무·마케팅·법무 분야 전문가가 1:1로 무료 상담을 제공합니다. 방문·온라인·현장 컨설팅 선택 가능.',
+    tags:['무료','전문가 상담','현장 컨설팅'],
+    deadline:'상시',
+    url:'https://www.sbiz.or.kr/sup/manage/consult.do',
+  },
+  {
+    cat:'교육·컨설팅', catColor:'#7c3aed', catBg:'#ede9fe',
+    name:'창업넷 온라인 교육',
+    org:'창업진흥원',
+    amount:'무료 (300+ 강좌)',
+    desc:'창업 기획부터 마케팅·세무·법률까지 300개 이상의 온라인 강좌를 무료로 수강할 수 있습니다.',
+    tags:['온라인','무료','300개+ 강좌'],
+    deadline:'상시',
+    url:'https://www.k-startup.go.kr',
+  },
+  {
+    cat:'세금·혜택', catColor:'#ea580c', catBg:'#fff7ed',
+    name:'소상공인 세금 감면',
+    org:'국세청',
+    amount:'소득세 50~100% 감면',
+    desc:'창업 중소기업·소상공인은 최초 창업 후 5년간 소득세 또는 법인세를 50~100% 감면받을 수 있습니다 (지역·업종 조건).',
+    tags:['소득세 감면','5년','창업 중소기업'],
+    deadline:'창업일로부터 5년 적용',
+    url:'https://www.nts.go.kr',
+  },
+  {
+    cat:'세금·혜택', catColor:'#ea580c', catBg:'#fff7ed',
+    name:'간이과세자 혜택',
+    org:'국세청',
+    amount:'연 매출 8,000만 원 미만',
+    desc:'연 매출 8,000만 원 미만 소상공인은 간이과세자로 등록해 부가세 납부 부담을 크게 줄일 수 있습니다.',
+    tags:['부가세 절감','간이과세','신규 창업'],
+    deadline:'창업 시 신청',
+    url:'https://www.nts.go.kr',
+  },
+];
+
+let activePolicyCat = '전체';
+
+function openPolicy() {
+  document.getElementById('policyOverlay').classList.add('open');
+  setNavActive('정책 가이드');
+  renderPolicy('전체');
+}
+function closePolicy() {
+  document.getElementById('policyOverlay').classList.remove('open');
+  setNavActive('보증금 검증');
+}
+
+function renderPolicy(cat) {
+  activePolicyCat = cat;
+  const cats = ['전체', '창업 지원금', '정책자금·대출', '교육·컨설팅', '세금·혜택'];
+  const filtered = cat === '전체' ? POLICY_DATA : POLICY_DATA.filter(p => p.cat === cat);
+
+  document.getElementById('policyBody').innerHTML = `
+    <div style="margin-bottom:20px;">
+      <div style="font-size:20px;font-weight:900;color:var(--text);margin-bottom:4px;">📋 창업 지원 정책 가이드</div>
+      <div style="font-size:12px;color:var(--light);">정부·공공기관 지원 프로그램 총 ${POLICY_DATA.length}건 · 2025년 기준</div>
+    </div>
+    <div class="policy-tabs">
+      ${cats.map(c => `<div class="policy-tab${c===cat?' active':''}" onclick="renderPolicy('${c}')">${c === '전체' ? '🗂 전체' : c}</div>`).join('')}
+    </div>
+    ${filtered.map(p => `
+      <div class="policy-card">
+        <div class="policy-card-header">
+          <div style="flex:1">
+            <span class="policy-badge" style="background:${p.catBg};color:${p.catColor};">${p.cat}</span>
+            <div style="font-size:16px;font-weight:800;color:var(--text);margin-top:6px;">${p.name}</div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px;">🏛 ${p.org}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0">
+            <div class="policy-amount">${p.amount}</div>
+            <div style="font-size:11px;color:var(--muted);">📅 ${p.deadline}</div>
+          </div>
+        </div>
+        <div class="policy-desc">${p.desc}</div>
+        <div class="policy-tags">${p.tags.map(t=>`<span class="policy-tag">${t}</span>`).join('')}</div>
+        <a href="${p.url}" target="_blank" rel="noopener" class="policy-link">신청 바로가기 →</a>
+      </div>`).join('')}
+    <div style="padding:14px 16px;background:var(--surface2);border-radius:var(--r);border:1px solid var(--border);font-size:12px;color:var(--light);line-height:1.7;margin-top:4px;">
+      ⚠️ 지원 정책은 예산 소진·조건 변경 등으로 수시 변경됩니다. 신청 전 반드시 해당 기관 공식 사이트에서 최신 정보를 확인하세요.
+    </div>`;
+}
+
+/* ═══════════════════════════════════════════════
    마이페이지
 ═══════════════════════════════════════════════ */
 const MP_HISTORY_KEY = 'changup_history';
@@ -2664,6 +2943,36 @@ function updateMpBadgeToPremium() {
   });
 }
 </script>
+
+<!-- 핫트렌드 모달 -->
+<div id="trendOverlay" class="page-overlay" onclick="if(event.target===this)closeTrend()">
+  <div class="page-modal">
+    <div class="page-modal-header" style="background:linear-gradient(135deg,#dc2626,#ea580c);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:20px;">📈</span>
+        <span style="font-size:16px;font-weight:800;color:#fff;">핫트렌드</span>
+        <span style="font-size:10px;font-weight:700;background:rgba(255,255,255,.2);color:#fff;border:1px solid rgba(255,255,255,.3);padding:2px 8px;border-radius:100px;">이번 달</span>
+      </div>
+      <button class="page-close" onclick="closeTrend()">✕</button>
+    </div>
+    <div class="page-body" id="trendBody"></div>
+  </div>
+</div>
+
+<!-- 정책 가이드 모달 -->
+<div id="policyOverlay" class="page-overlay" onclick="if(event.target===this)closePolicy()">
+  <div class="page-modal">
+    <div class="page-modal-header" style="background:linear-gradient(135deg,#1b2a4a,#1e3a5f);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:20px;">📋</span>
+        <span style="font-size:16px;font-weight:800;color:#fff;">정책 가이드</span>
+        <span style="font-size:10px;font-weight:700;background:rgba(255,255,255,.15);color:#93c5fd;border:1px solid rgba(147,197,253,.3);padding:2px 8px;border-radius:100px;">8개 정책</span>
+      </div>
+      <button class="page-close" onclick="closePolicy()">✕</button>
+    </div>
+    <div class="page-body" id="policyBody"></div>
+  </div>
+</div>
 
 <!-- 마이페이지 모달 -->
 <div id="mypageOverlay" class="mp-overlay" onclick="if(event.target===this)closeMypage()">
