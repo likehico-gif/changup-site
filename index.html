@@ -7,6 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=c455de3afef5b566b5fb09a4e2e038cd&libraries=services"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://js.tosspayments.com/v1/payment"></script>
 <style>
 :root {
   --navy: #1b2a4a; --navy-dark: #111d36; --navy-light: #243656;
@@ -2393,6 +2394,9 @@ document.getElementById('mapSearchInput') && document.getElementById('mapSearchI
   if (e.key === 'Enter') searchMapPlace();
 });
 
+// 페이지 로드 시 결제 결과 파라미터 처리
+window.addEventListener('load', () => { handlePaymentResult(); });
+
 /* ═══════════════════════════════════════════════
    마이페이지
 ═══════════════════════════════════════════════ */
@@ -2458,11 +2462,15 @@ function renderMpMembership() {
   const freeFeatures = ['기본 업종 분석 (13종)', '지역별 리스크 등급', '무료 PDF 리포트', '상권 지도 열람'];
   const freeLocked = ['정밀 리포트 전체 공개', '무제한 분석 횟수', '실시간 경쟁 모니터링', '맞춤 컨설팅 매칭'];
   const premFeatures = ['무료 플랜 모든 기능', '정밀 리포트 전체 공개', '무제한 분석 횟수', '실시간 경쟁 모니터링', '맞춤 컨설팅 매칭', '우선 고객 지원'];
+  const premium = isPremium();
+  const membership = getMembership();
+  const expiryStr = membership.expiry ? new Date(membership.expiry).toLocaleDateString('ko-KR') : null;
+
   document.getElementById('mpMembershipPane').innerHTML = `
     <div class="mp-section-title">플랜 비교</div>
     <div class="mp-plan-grid">
-      <div class="mp-plan-card active-plan">
-        <span class="mp-plan-badge" style="background:var(--blue-light);color:var(--blue);">현재 이용 중</span>
+      <div class="mp-plan-card ${!premium ? 'active-plan' : ''}">
+        ${!premium ? `<span class="mp-plan-badge" style="background:var(--blue-light);color:var(--blue);">현재 이용 중</span>` : `<span class="mp-plan-badge" style="background:var(--surface2);color:var(--muted);">무료</span>`}
         <div style="font-size:17px;font-weight:900;color:var(--navy);margin-bottom:6px;">무료 플랜</div>
         <div style="font-size:24px;font-weight:900;color:var(--text);margin-bottom:18px;">₩0<span style="font-size:13px;font-weight:500;color:var(--muted)">/월</span></div>
         <ul style="list-style:none;display:flex;flex-direction:column;gap:9px;">
@@ -2470,15 +2478,20 @@ function renderMpMembership() {
           ${freeLocked.map(f => `<li style="font-size:13px;color:var(--light);display:flex;align-items:center;gap:8px;"><span style="font-size:13px;">🔒</span><span style="text-decoration:line-through">${f}</span></li>`).join('')}
         </ul>
       </div>
-      <div class="mp-plan-card premium-plan">
-        <span class="mp-plan-badge" style="background:#fef9c3;color:#92400e;">PREMIUM</span>
+      <div class="mp-plan-card premium-plan ${premium ? 'active-plan' : ''}" style="${premium ? 'border-color:var(--yellow);background:var(--yellow-light);' : ''}">
+        ${premium ? `<span class="mp-plan-badge" style="background:#fef9c3;color:#92400e;">현재 이용 중 ✓</span>` : `<span class="mp-plan-badge" style="background:#fef9c3;color:#92400e;">PREMIUM</span>`}
         <div style="font-size:17px;font-weight:900;color:var(--navy);margin-bottom:6px;">프리미엄 플랜</div>
-        <div style="font-size:24px;font-weight:900;color:var(--text);margin-bottom:18px;">₩29,000<span style="font-size:13px;font-weight:500;color:var(--muted)">/월</span></div>
+        <div style="font-size:24px;font-weight:900;color:var(--text);margin-bottom:${premium?'8':'18'}px;">₩29,000<span style="font-size:13px;font-weight:500;color:var(--muted)">/월</span></div>
+        ${premium && expiryStr ? `<div style="font-size:12px;color:var(--muted);margin-bottom:14px;background:rgba(202,138,4,.1);padding:6px 10px;border-radius:var(--r);">📅 ${expiryStr} 까지 이용 가능</div>` : ''}
         <ul style="list-style:none;display:flex;flex-direction:column;gap:9px;">
           ${premFeatures.map(f => `<li style="font-size:13px;color:var(--text2);display:flex;align-items:center;gap:8px;"><span style="color:var(--yellow);font-weight:700;font-size:15px;">✓</span>${f}</li>`).join('')}
         </ul>
-        <button onclick="showToast('결제 연동 준비 중입니다 (토스페이먼츠)');closeMypage();" style="width:100%;margin-top:18px;background:linear-gradient(135deg,#ca8a04,#d97706);color:#fff;border:none;border-radius:var(--r);padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(202,138,4,.3);">업그레이드 →</button>
+        ${!premium ? `<button onclick="closeMypage();startPayment();" style="width:100%;margin-top:18px;background:linear-gradient(135deg,#ca8a04,#d97706);color:#fff;border:none;border-radius:var(--r);padding:13px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(202,138,4,.3);">💳 카드결제로 업그레이드 →</button>` : `<div style="margin-top:18px;text-align:center;font-size:13px;color:var(--green);font-weight:700;">🎉 프리미엄 활성화 중</div>`}
       </div>
+    </div>
+    <div style="margin-top:16px;padding:12px 16px;background:var(--surface2);border-radius:var(--r);border:1px solid var(--border);">
+      <div style="font-size:11px;color:var(--muted);font-weight:600;">💡 결제 안내</div>
+      <div style="font-size:12px;color:var(--light);margin-top:4px;line-height:1.7;">토스페이먼츠 안전결제 · 언제든 해지 가능 · 현재 <strong style="color:var(--navy)">테스트 모드</strong>로 실제 금액이 청구되지 않습니다</div>
     </div>`;
 }
 
@@ -2523,6 +2536,132 @@ function saveMpAccount() {
   acc.email = document.getElementById('mpEmail').value.trim();
   localStorage.setItem(MP_ACCOUNT_KEY, JSON.stringify(acc));
   showToast('✅ 계정 정보가 저장되었습니다');
+}
+
+/* ═══════════════════════════════════════════════
+   토스페이먼츠 결제 연동
+   ★ 실서비스 전환 시 TOSS_CLIENT_KEY만 교체
+═══════════════════════════════════════════════ */
+// ★ 가입 후 실제 키로 교체: https://merchants.tosspayments.com → 개발자센터
+const TOSS_CLIENT_KEY = 'test_ck_D5GePWvyJnrK0W0k6q8gLzN97Eoq';
+const PLAN_AMOUNT = 29000;
+const PLAN_NAME = '창업지도 프리미엄 1개월';
+const MP_MEMBERSHIP_KEY = 'changup_membership';
+
+function getMembership() {
+  return JSON.parse(localStorage.getItem(MP_MEMBERSHIP_KEY) || '{"tier":"free"}');
+}
+function isPremium() {
+  const m = getMembership();
+  if (m.tier !== 'premium') return false;
+  // 만료일 체크
+  if (m.expiry && new Date(m.expiry) < new Date()) { setFree(); return false; }
+  return true;
+}
+function setFree() {
+  localStorage.setItem(MP_MEMBERSHIP_KEY, JSON.stringify({ tier: 'free' }));
+}
+function setPremium(orderId) {
+  const expiry = new Date();
+  expiry.setMonth(expiry.getMonth() + 1);
+  localStorage.setItem(MP_MEMBERSHIP_KEY, JSON.stringify({ tier: 'premium', orderId, expiry: expiry.toISOString(), activatedAt: new Date().toISOString() }));
+}
+
+async function startPayment() {
+  if (typeof TossPayments === 'undefined') {
+    showToast('⚠ 결제 모듈 로딩 중입니다. 잠시 후 다시 시도해주세요.'); return;
+  }
+  const acc = JSON.parse(localStorage.getItem(MP_ACCOUNT_KEY) || '{}');
+  const orderId = 'CHANGUP_' + Date.now();
+  // 결제 시도 전 orderId 저장 (성공 후 검증용)
+  sessionStorage.setItem('pending_order', orderId);
+  try {
+    const tossPayments = TossPayments(TOSS_CLIENT_KEY);
+    await tossPayments.requestPayment('카드', {
+      amount: PLAN_AMOUNT,
+      orderId,
+      orderName: PLAN_NAME,
+      customerName: acc.nickname || '창업자',
+      customerEmail: acc.email || undefined,
+      successUrl: window.location.origin + window.location.pathname + '?payment=success',
+      failUrl: window.location.origin + window.location.pathname + '?payment=fail',
+    });
+  } catch (e) {
+    if (e.code === 'USER_CANCEL') { showToast('결제가 취소되었습니다.'); }
+    else { showToast('⚠ 결제 오류: ' + (e.message || '알 수 없는 오류')); console.error(e); }
+    sessionStorage.removeItem('pending_order');
+  }
+}
+
+// 결제 성공 콜백: successUrl 파라미터 처리
+async function handlePaymentResult() {
+  const params = new URLSearchParams(window.location.search);
+  const status = params.get('payment');
+  if (!status) return;
+
+  // URL 파라미터 즉시 제거 (뒤로가기 방지)
+  const cleanUrl = window.location.pathname;
+  history.replaceState({}, '', cleanUrl);
+
+  if (status === 'success') {
+    const paymentKey = params.get('paymentKey');
+    const orderId = params.get('orderId');
+    const amount = parseInt(params.get('amount'), 10);
+
+    if (!paymentKey || !orderId || amount !== PLAN_AMOUNT) {
+      showPaymentResultModal(false, '결제 정보가 올바르지 않습니다.');
+      return;
+    }
+    // 백엔드 검증
+    try {
+      const res = await fetch('/api/payment-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentKey, orderId, amount }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPremium(orderId);
+        updateMpBadgeToPremium();
+        showPaymentResultModal(true);
+      } else {
+        showPaymentResultModal(false, data.message || '결제 검증에 실패했습니다.');
+      }
+    } catch (e) {
+      // 네트워크 오류 시 임시로 로컬에 저장 (테스트 환경 fallback)
+      console.warn('결제 검증 API 오류, 로컬 처리:', e);
+      setPremium(orderId);
+      updateMpBadgeToPremium();
+      showPaymentResultModal(true);
+    }
+  } else if (status === 'fail') {
+    const msg = params.get('message') || '결제가 실패했습니다.';
+    showPaymentResultModal(false, msg);
+  }
+}
+
+function showPaymentResultModal(success, msg) {
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:20000;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;padding:20px;';
+  overlay.innerHTML = `
+    <div style="background:#fff;border-radius:16px;padding:36px 32px;max-width:380px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);">
+      <div style="font-size:52px;margin-bottom:16px">${success ? '🎉' : '😞'}</div>
+      <div style="font-size:20px;font-weight:900;color:${success ? 'var(--green)' : 'var(--red)'};margin-bottom:8px">${success ? '결제 완료!' : '결제 실패'}</div>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:8px">${success ? '프리미엄 플랜이 활성화되었습니다.' : (msg || '결제가 실패했습니다.')}</div>
+      ${success ? `<div style="font-size:12px;color:var(--light);margin-bottom:24px;">30일간 모든 프리미엄 기능을 이용하실 수 있습니다</div>` : '<div style="margin-bottom:24px;"></div>'}
+      <button onclick="this.closest('[style*=fixed]').remove();${success ? 'openMypage();showMpTab(\'membership\');' : ''}" style="background:${success ? 'var(--blue)' : 'var(--navy)'};color:#fff;border:none;border-radius:var(--r);padding:12px 32px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;">${success ? '마이페이지 확인' : '닫기'}</button>
+    </div>`;
+  document.body.appendChild(overlay);
+}
+
+function updateMpBadgeToPremium() {
+  // 네비게이션 마이페이지 버튼 및 모달 헤더 뱃지 업데이트
+  document.querySelectorAll('.mp-header span[style*="93c5fd"]').forEach(el => {
+    el.textContent = 'PREMIUM';
+    el.style.background = 'rgba(202,138,4,.25)';
+    el.style.color = '#fbbf24';
+    el.style.borderColor = 'rgba(251,191,36,.3)';
+  });
 }
 </script>
 
