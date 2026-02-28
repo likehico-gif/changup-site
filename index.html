@@ -8,6 +8,7 @@
 <script type="text/javascript" src="//dapi.kakao.com/v2/maps/sdk.js?appkey=c455de3afef5b566b5fb09a4e2e038cd&libraries=services"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://js.tosspayments.com/v1/payment"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
   --navy: #1b2a4a; --navy-dark: #111d36; --navy-light: #243656;
@@ -638,6 +639,37 @@ footer{background:var(--navy-dark);color:rgba(255,255,255,.35);font-size:12px;pa
 .mp-input{width:100%;border:1.5px solid var(--border);border-radius:var(--r);padding:10px 14px;font-size:14px;font-family:inherit;outline:none;transition:border-color .2s;background:#fff;}
 .mp-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.08);}
 
+/* ── AUTH MODAL ──────────────────────────────── */
+.auth-overlay{position:fixed;inset:0;z-index:11000;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;padding:20px;}
+.auth-overlay.open{display:flex;}
+.auth-modal{background:#fff;border-radius:16px;width:min(420px,100%);box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden;}
+.auth-header{background:var(--navy);padding:20px 24px;text-align:center;}
+.auth-tabs{display:flex;background:#f8fafc;border-bottom:1px solid var(--border);}
+.auth-tab{flex:1;padding:13px;font-size:14px;font-weight:700;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .2s;text-align:center;}
+.auth-tab.active{color:var(--blue);border-bottom-color:var(--blue);}
+.auth-body{padding:24px;}
+.auth-field{margin-bottom:16px;}
+.auth-field label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin-bottom:6px;}
+.auth-input{width:100%;border:1.5px solid var(--border);border-radius:var(--r);padding:11px 14px;font-size:14px;font-family:inherit;outline:none;transition:all .2s;background:#fff;}
+.auth-input:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.08);}
+.auth-input.error{border-color:var(--red);box-shadow:0 0 0 3px rgba(220,38,38,.08);}
+.auth-btn{width:100%;padding:13px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;transition:all .2s;margin-top:4px;}
+.auth-btn:hover{background:#1d4ed8;}
+.auth-btn:disabled{opacity:.6;cursor:not-allowed;}
+.auth-error{font-size:12px;color:var(--red);font-weight:600;margin-top:10px;padding:10px 12px;background:var(--red-light);border-radius:var(--r);display:none;}
+.auth-error.show{display:block;}
+.auth-divider{text-align:center;font-size:12px;color:var(--light);margin:16px 0;position:relative;}
+.auth-divider::before,.auth-divider::after{content:'';position:absolute;top:50%;width:40%;height:1px;background:var(--border);}
+.auth-divider::before{left:0;}.auth-divider::after{right:0;}
+/* 유저 드롭다운 */
+.user-menu{position:relative;}
+.user-menu-dropdown{position:absolute;top:calc(100% + 8px);right:0;background:#fff;border:1px solid var(--border);border-radius:var(--r-lg);box-shadow:var(--shadow-lg);min-width:180px;z-index:200;display:none;overflow:hidden;}
+.user-menu-dropdown.open{display:block;}
+.user-menu-item{padding:11px 16px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;transition:background .15s;}
+.user-menu-item:hover{background:var(--surface2);}
+.user-menu-item.danger{color:var(--red);}
+.user-menu-item.danger:hover{background:var(--red-light);}
+
 /* ── 공통 페이지 오버레이 (핫트렌드·정책가이드 공용) ── */
 .page-overlay{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.75);display:none;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;}
 .page-overlay.open{display:flex;}
@@ -704,7 +736,25 @@ footer{background:var(--navy-dark);color:rgba(255,255,255,.35);font-size:12px;pa
     </div>
   </div>
   <div class="nav-right">
-    <button class="nav-btn" onclick="openMypage()">마이페이지</button>
+    <!-- 로그아웃 상태: 로그인 버튼 / 로그인 상태: 유저 메뉴 -->
+    <div id="authGuestBtns" style="display:flex;gap:8px;">
+      <button class="nav-btn" onclick="openAuthModal('login')">로그인</button>
+      <button class="nav-btn" style="border-color:rgba(255,255,255,.3);" onclick="openAuthModal('signup')">회원가입</button>
+    </div>
+    <div id="authUserMenu" class="user-menu" style="display:none;">
+      <button class="nav-btn" onclick="toggleUserMenu()" style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:16px;">👤</span>
+        <span id="navNickname">사용자</span>
+        <span style="font-size:10px;opacity:.7;">▾</span>
+      </button>
+      <div class="user-menu-dropdown" id="userMenuDropdown">
+        <div class="user-menu-item" onclick="closeUserMenu();openMypage();">📊 마이페이지</div>
+        <div class="user-menu-item" onclick="closeUserMenu();openMypage();showMpTab('membership');">💎 멤버십</div>
+        <div style="height:1px;background:var(--border);margin:4px 0;"></div>
+        <div class="user-menu-item danger" onclick="handleSignOut()">🚪 로그아웃</div>
+      </div>
+    </div>
+    <button class="nav-btn" id="mypageNavBtn" onclick="openMypage()">마이페이지</button>
     <button class="nav-btn primary" onclick="scrollToSearch()">무료 검증 시작</button>
   </div>
 </nav>
@@ -2699,6 +2749,152 @@ function renderPolicy(cat) {
 }
 
 /* ═══════════════════════════════════════════════
+   Supabase Auth
+═══════════════════════════════════════════════ */
+const SUPABASE_URL = 'https://xrxfmaeesbvitryrlsgw.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_-ROHxUA1EwpwgD4l6eT-SQ_fFwPtlUp';
+const _sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let currentUser = null;
+
+// 앱 시작 시 세션 복원
+(async () => {
+  const { data: { session } } = await _sb.auth.getSession();
+  if (session) { currentUser = session.user; updateAuthUI(true); }
+})();
+
+// 로그인 상태 변경 감지
+_sb.auth.onAuthStateChange((event, session) => {
+  currentUser = session?.user || null;
+  updateAuthUI(!!currentUser);
+  if (event === 'SIGNED_IN') {
+    closeAuthModal();
+    showToast(`👋 환영합니다, ${getNickname()}!`);
+    syncLocalHistoryToSupabase();
+  }
+  if (event === 'SIGNED_OUT') showToast('👋 로그아웃되었습니다');
+});
+
+function getNickname() {
+  return currentUser?.user_metadata?.nickname
+    || currentUser?.email?.split('@')[0]
+    || '사용자';
+}
+
+function updateAuthUI(loggedIn) {
+  document.getElementById('authGuestBtns').style.display = loggedIn ? 'none' : 'flex';
+  document.getElementById('authUserMenu').style.display  = loggedIn ? 'block' : 'none';
+  document.getElementById('mypageNavBtn').style.display  = loggedIn ? 'none' : 'block';
+  if (loggedIn) {
+    document.getElementById('navNickname').textContent = getNickname();
+  }
+}
+
+// Auth 모달 열기/닫기/탭 전환
+function openAuthModal(tab) {
+  document.getElementById('authOverlay').classList.add('open');
+  showAuthTab(tab || 'login');
+  setTimeout(() => {
+    const el = document.getElementById(tab === 'signup' ? 'signupNick' : 'loginEmail');
+    if (el) el.focus();
+  }, 100);
+}
+function closeAuthModal() {
+  document.getElementById('authOverlay').classList.remove('open');
+  // 에러/값 초기화
+  ['loginEmail','loginPw','signupNick','signupEmail','signupPw','signupPw2'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.value = ''; el?.classList.remove('error');
+  });
+  document.getElementById('loginError').classList.remove('show');
+  document.getElementById('signupError').classList.remove('show');
+}
+function showAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.getElementById('authLoginPane').style.display  = tab === 'login'  ? 'block' : 'none';
+  document.getElementById('authSignupPane').style.display = tab === 'signup' ? 'block' : 'none';
+}
+
+// 에러 표시 헬퍼
+function showAuthError(pane, msg) {
+  const el = document.getElementById(pane + 'Error');
+  el.textContent = msg; el.classList.add('show');
+}
+function clearAuthError(pane) {
+  document.getElementById(pane + 'Error').classList.remove('show');
+}
+
+// 로그인
+async function handleSignIn() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pw    = document.getElementById('loginPw').value;
+  clearAuthError('login');
+  if (!email || !pw) { showAuthError('login', '이메일과 비밀번호를 입력해주세요.'); return; }
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = '로그인 중...';
+  const { error } = await _sb.auth.signInWithPassword({ email, password: pw });
+  btn.disabled = false; btn.textContent = '로그인';
+  if (error) {
+    const msg = error.message.includes('Invalid login') ? '이메일 또는 비밀번호가 올바르지 않습니다.'
+              : error.message.includes('Email not confirmed') ? '이메일 인증 후 로그인해주세요.'
+              : error.message;
+    showAuthError('login', msg);
+  }
+}
+
+// 회원가입
+async function handleSignUp() {
+  const nick  = document.getElementById('signupNick').value.trim();
+  const email = document.getElementById('signupEmail').value.trim();
+  const pw    = document.getElementById('signupPw').value;
+  const pw2   = document.getElementById('signupPw2').value;
+  clearAuthError('signup');
+  if (!nick)        { showAuthError('signup', '닉네임을 입력해주세요.'); return; }
+  if (!email)       { showAuthError('signup', '이메일을 입력해주세요.'); return; }
+  if (pw.length < 6){ showAuthError('signup', '비밀번호는 6자 이상이어야 합니다.'); return; }
+  if (pw !== pw2)   { showAuthError('signup', '비밀번호가 일치하지 않습니다.'); return; }
+  const btn = document.getElementById('signupBtn');
+  btn.disabled = true; btn.textContent = '가입 중...';
+  const { error } = await _sb.auth.signUp({
+    email, password: pw,
+    options: { data: { nickname: nick } }
+  });
+  btn.disabled = false; btn.textContent = '회원가입';
+  if (error) {
+    const msg = error.message.includes('already registered') ? '이미 사용 중인 이메일입니다.'
+              : error.message;
+    showAuthError('signup', msg);
+  } else {
+    // 이메일 확인 없이 바로 로그인 (Supabase 기본: 확인 메일 발송)
+    closeAuthModal();
+    showToast('✅ 가입 완료! 이메일 인증 후 로그인하세요.');
+  }
+}
+
+// 로그아웃
+async function handleSignOut() {
+  closeUserMenu();
+  await _sb.auth.signOut();
+}
+
+// 유저 드롭다운
+function toggleUserMenu() {
+  document.getElementById('userMenuDropdown').classList.toggle('open');
+}
+function closeUserMenu() {
+  document.getElementById('userMenuDropdown').classList.remove('open');
+}
+// 외부 클릭 시 드롭다운 닫기
+document.addEventListener('click', e => {
+  if (!e.target.closest('.user-menu')) closeUserMenu();
+});
+
+// localStorage 분석 내역 → Supabase 동기화 (로그인 시 1회)
+async function syncLocalHistoryToSupabase() {
+  if (!currentUser) return;
+  // 추후 Supabase DB 테이블 추가 시 확장
+  // 현재는 로컬 유지
+}
+
+/* ═══════════════════════════════════════════════
    마이페이지
 ═══════════════════════════════════════════════ */
 const MP_HISTORY_KEY = 'changup_history';
@@ -2802,9 +2998,24 @@ function renderMpAccount() {
   const scores = history.map(h => h.score);
   const bestScore = scores.length ? Math.max(...scores) : null;
   const bestBiz = history.find(h => h.score === bestScore)?.biz || '-';
-  const joinDate = acc.joinDate || new Date().toLocaleDateString('ko-KR');
-  if (!acc.joinDate) { acc.joinDate = joinDate; localStorage.setItem(MP_ACCOUNT_KEY, JSON.stringify(acc)); }
+
+  // Supabase 로그인 상태면 실제 유저 데이터 우선 사용
+  const isLoggedIn = !!currentUser;
+  const displayNick = isLoggedIn ? getNickname() : (acc.nickname || '');
+  const displayEmail = isLoggedIn ? (currentUser.email || '') : (acc.email || '');
+  const joinDate = isLoggedIn
+    ? new Date(currentUser.created_at).toLocaleDateString('ko-KR')
+    : (acc.joinDate || new Date().toLocaleDateString('ko-KR'));
+  if (!acc.joinDate && !isLoggedIn) { acc.joinDate = joinDate; localStorage.setItem(MP_ACCOUNT_KEY, JSON.stringify(acc)); }
+
   document.getElementById('mpAccountPane').innerHTML = `
+    ${isLoggedIn ? `<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--green-light);border:1px solid #86efac;border-radius:var(--r-lg);margin-bottom:20px;">
+      <span style="font-size:22px;">✅</span>
+      <div><div style="font-size:13px;font-weight:700;color:var(--green)">로그인됨</div><div style="font-size:12px;color:var(--muted)">${displayEmail}</div></div>
+    </div>` : `<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--blue-bg);border:1px solid var(--blue-light);border-radius:var(--r-lg);margin-bottom:20px;cursor:pointer;" onclick="closeMypage();openAuthModal('login')">
+      <span style="font-size:22px;">🔑</span>
+      <div><div style="font-size:13px;font-weight:700;color:var(--blue)">로그인하면 분석 내역이 클라우드에 저장됩니다</div><div style="font-size:12px;color:var(--muted)">탭하여 로그인 →</div></div>
+    </div>`}
     <div class="mp-stat-grid">
       <div class="mp-stat-box">
         <div style="font-size:26px;font-weight:900;color:var(--blue);line-height:1">${history.length}</div>
@@ -2821,21 +3032,33 @@ function renderMpAccount() {
     </div>
     <div class="mp-input-row">
       <label>닉네임</label>
-      <input class="mp-input" id="mpNickname" value="${acc.nickname || ''}" placeholder="닉네임을 입력하세요">
+      <input class="mp-input" id="mpNickname" value="${displayNick}" placeholder="닉네임을 입력하세요" ${isLoggedIn ? '' : ''}>
     </div>
     <div class="mp-input-row">
-      <label>이메일 (알림 수신용)</label>
-      <input class="mp-input" id="mpEmail" type="email" value="${acc.email || ''}" placeholder="example@email.com">
+      <label>이메일</label>
+      <input class="mp-input" id="mpEmail" type="email" value="${displayEmail}" placeholder="example@email.com" ${isLoggedIn ? 'readonly style="background:var(--surface2);color:var(--muted)"' : ''}>
     </div>
-    <div style="font-size:12px;color:var(--light);margin-bottom:20px;">최초 방문일: ${joinDate}</div>
-    <button onclick="saveMpAccount()" style="background:var(--blue);color:#fff;border:none;border-radius:var(--r);padding:11px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(37,99,235,.25);">저장하기</button>`;
+    <div style="font-size:12px;color:var(--light);margin-bottom:20px;">${isLoggedIn ? '가입일' : '최초 방문일'}: ${joinDate}</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button onclick="saveMpAccount()" style="background:var(--blue);color:#fff;border:none;border-radius:var(--r);padding:11px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;box-shadow:0 2px 8px rgba(37,99,235,.25);">저장하기</button>
+      ${isLoggedIn ? `<button onclick="handleSignOut()" style="background:none;color:var(--red);border:1.5px solid var(--red);border-radius:var(--r);padding:11px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">로그아웃</button>` : ''}
+    </div>`;
 }
 
-function saveMpAccount() {
+async function saveMpAccount() {
+  const nickname = document.getElementById('mpNickname').value.trim();
+  // localStorage 저장
   const acc = JSON.parse(localStorage.getItem(MP_ACCOUNT_KEY) || '{}');
-  acc.nickname = document.getElementById('mpNickname').value.trim();
-  acc.email = document.getElementById('mpEmail').value.trim();
+  acc.nickname = nickname;
+  if (!document.getElementById('mpEmail').readOnly) {
+    acc.email = document.getElementById('mpEmail').value.trim();
+  }
   localStorage.setItem(MP_ACCOUNT_KEY, JSON.stringify(acc));
+  // Supabase 로그인 상태면 user_metadata도 업데이트
+  if (currentUser && nickname) {
+    await _sb.auth.updateUser({ data: { nickname } });
+    document.getElementById('navNickname').textContent = nickname;
+  }
   showToast('✅ 계정 정보가 저장되었습니다');
 }
 
@@ -2993,6 +3216,65 @@ function updateMpBadgeToPremium() {
       <button class="page-close" onclick="closePolicy()">✕</button>
     </div>
     <div class="page-body" id="policyBody"></div>
+  </div>
+</div>
+
+<!-- 로그인/회원가입 모달 -->
+<div id="authOverlay" class="auth-overlay" onclick="if(event.target===this)closeAuthModal()">
+  <div class="auth-modal">
+    <div class="auth-header">
+      <div style="font-size:28px;margin-bottom:6px;">🧭</div>
+      <div style="font-size:17px;font-weight:900;color:#fff;">창업지도</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:3px;">계정으로 분석 내역을 저장하세요</div>
+    </div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" data-tab="login" onclick="showAuthTab('login')">로그인</div>
+      <div class="auth-tab" data-tab="signup" onclick="showAuthTab('signup')">회원가입</div>
+    </div>
+    <div class="auth-body">
+      <!-- 로그인 폼 -->
+      <div id="authLoginPane">
+        <div class="auth-field">
+          <label>이메일</label>
+          <input class="auth-input" id="loginEmail" type="email" placeholder="example@email.com" autocomplete="email">
+        </div>
+        <div class="auth-field">
+          <label>비밀번호</label>
+          <input class="auth-input" id="loginPw" type="password" placeholder="비밀번호 입력" autocomplete="current-password"
+            onkeydown="if(event.key==='Enter')handleSignIn()">
+        </div>
+        <div class="auth-error" id="loginError"></div>
+        <button class="auth-btn" id="loginBtn" onclick="handleSignIn()">로그인</button>
+        <div style="text-align:center;margin-top:14px;font-size:12px;color:var(--muted);">
+          계정이 없으신가요? <span style="color:var(--blue);font-weight:700;cursor:pointer;" onclick="showAuthTab('signup')">회원가입</span>
+        </div>
+      </div>
+      <!-- 회원가입 폼 -->
+      <div id="authSignupPane" style="display:none;">
+        <div class="auth-field">
+          <label>닉네임</label>
+          <input class="auth-input" id="signupNick" type="text" placeholder="창업자123" autocomplete="nickname">
+        </div>
+        <div class="auth-field">
+          <label>이메일</label>
+          <input class="auth-input" id="signupEmail" type="email" placeholder="example@email.com" autocomplete="email">
+        </div>
+        <div class="auth-field">
+          <label>비밀번호 <span style="font-size:11px;font-weight:500;color:var(--light);">(6자 이상)</span></label>
+          <input class="auth-input" id="signupPw" type="password" placeholder="6자 이상 입력" autocomplete="new-password">
+        </div>
+        <div class="auth-field">
+          <label>비밀번호 확인</label>
+          <input class="auth-input" id="signupPw2" type="password" placeholder="비밀번호 재입력" autocomplete="new-password"
+            onkeydown="if(event.key==='Enter')handleSignUp()">
+        </div>
+        <div class="auth-error" id="signupError"></div>
+        <button class="auth-btn" id="signupBtn" onclick="handleSignUp()">회원가입</button>
+        <div style="text-align:center;margin-top:14px;font-size:12px;color:var(--muted);">
+          이미 계정이 있으신가요? <span style="color:var(--blue);font-weight:700;cursor:pointer;" onclick="showAuthTab('login')">로그인</span>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
