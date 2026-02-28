@@ -1409,17 +1409,18 @@ function renderStep1(){
   const cards=recs.map((k,i)=>{
     const d=BIZ_DB[k],ts=calculateRiskScore(d),gi=getGradeInfo(ts,d.regulationFail);
     const diff=ts-(d.areaAvgScore||60);
-    return`<div class="rec-card${i===0?` top-pick${k===selectedBiz?' selected':''}`:''}${k===selectedBiz&&i!==0?' selected':''}" onclick="selectRecCard(this,'${k}')">
+    // data-key 추가, 점수 요소에 data-score/data-bar 속성 부여 → 실시간 업데이트용
+    return`<div class="rec-card${i===0?` top-pick${k===selectedBiz?' selected':''}`:''}${k===selectedBiz&&i!==0?' selected':''}" data-key="${k}" onclick="selectRecCard(this,'${k}')">
       <span class="rec-badge ${d.badge}">${d.badgeText}</span>
       <div class="rec-icon">${d.icon}</div>
-      <div class="rec-name">${k}</div>
+      <div class="rec-name">${k} <span class="rt-indicator" style="display:none;font-size:9px;background:var(--blue);color:#fff;padding:1px 6px;border-radius:100px;font-weight:700;vertical-align:middle;letter-spacing:.2px">⟳</span></div>
       <div class="rec-type">${d.type}</div>
       <div class="score-row">
-        <div><div class="score-label"><span>수익성</span><strong>${d.profitScore}점</strong></div><div class="score-bar"><div class="score-fill sf-profit" style="width:${d.profitScore}%"></div></div></div>
-        <div><div class="score-label"><span>경쟁</span><strong>${d.competitionScore>60?'높음':'보통'}</strong></div><div class="score-bar"><div class="score-fill sf-compete" style="width:${d.competitionScore}%"></div></div></div>
-        <div><div class="score-label"><span>종합 등급</span><strong style="color:${gi.cls==='safe'?'var(--green)':gi.cls==='caution'?'var(--yellow)':'var(--red)'}">${ts}점 ${gi.grade}</strong></div><div class="score-bar"><div class="score-fill sf-grade" style="width:${ts}%"></div></div></div>
+        <div><div class="score-label"><span>수익성</span><strong data-score="profit">${d.profitScore}점</strong></div><div class="score-bar"><div class="score-fill sf-profit" data-bar="profit" style="width:${d.profitScore}%"></div></div></div>
+        <div><div class="score-label"><span>경쟁</span><strong data-score="competition">${d.competitionScore>60?'높음':'보통'}</strong></div><div class="score-bar"><div class="score-fill sf-compete" data-bar="competition" style="width:${d.competitionScore}%"></div></div></div>
+        <div><div class="score-label"><span>종합 등급</span><strong data-score="total" style="color:${gi.cls==='safe'?'var(--green)':gi.cls==='caution'?'var(--yellow)':'var(--red)'}">${ts}점 ${gi.grade}</strong></div><div class="score-bar"><div class="score-fill sf-grade" data-bar="total" style="width:${ts}%"></div></div></div>
       </div>
-      <div style="font-size:10px;color:${diff>=0?'var(--green)':'var(--red)'};font-weight:700;margin-bottom:10px;">${diff>=0?'▲':'▼'} ${Math.abs(diff)}점 (${d.areaName||'지역'} 평균 대비)</div>
+      <div data-diff style="font-size:10px;color:${diff>=0?'var(--green)':'var(--red)'};font-weight:700;margin-bottom:10px;">${diff>=0?'▲':'▼'} ${Math.abs(diff)}점 (${d.areaName||'지역'} 평균 대비)</div>
       <div class="rec-cost">
         <div><div class="rc-label">예상 초기비용</div><div class="rc-val">${(d.costMin/10000).toFixed(0)}천~${(d.costMax/10000).toFixed(0)}천만원</div></div>
         <div style="text-align:right"><div class="rc-label">월 순이익</div><div class="rc-val" style="color:var(--green)">+${d.revBase}만~</div></div>
@@ -1434,12 +1435,71 @@ function renderStep1(){
   document.getElementById('result-area').style.display='block';
   goStep(1);
   setTimeout(()=>document.getElementById('result-area').scrollIntoView({behavior:'smooth',block:'start'}),100);
+
+  // ── B안: 지도 좌표 있으면 실시간 점수 업데이트 (1회 fetch → 3장 카드 모두 적용) ──
+  if(selectedCoords && selectedCoords.lat){
+    // ① 카드마다 로딩 인디케이터 표시
+    recs.forEach(k=>{
+      const ind=document.querySelector(`.rec-card[data-key="${k}"] .rt-indicator`);
+      if(ind){ind.style.display='inline';ind.style.background='var(--blue)';}
+    });
+    // ② API 1회 호출 (selectedBiz 기준 카테고리 코드로 동종업소 집계)
+    fetchRealAnalysis(selectedCoords.lat, selectedCoords.lng, selectedBiz)
+      .then(data=>{
+        if(!data||!data.success) {
+          recs.forEach(k=>{ const ind=document.querySelector(`.rec-card[data-key="${k}"] .rt-indicator`); if(ind)ind.style.display='none'; });
+          return;
+        }
+        realApiData=data;
+        const firstKey=selectedBiz&&BIZ_DB[selectedBiz]?selectedBiz:recs[0];
+        recs.forEach(k=>{
+          const card=document.querySelector(`.rec-card[data-key="${k}"]`);
+          if(!card) return;
+          // ③ 해당 업종 BIZ_DB 기반 + API 데이터로 점수 재계산
+          const realD=computeRealScores(BIZ_DB[k], data);
+          const ts2=calculateRiskScore(realD);
+          const gi2=getGradeInfo(ts2, realD.regulationFail);
+          const diff2=ts2-(realD.areaAvgScore||60);
+          // ④ 수익성
+          const ps=card.querySelector('[data-score="profit"]'),pb=card.querySelector('[data-bar="profit"]');
+          if(ps) ps.textContent=`${realD.profitScore}점`;
+          if(pb) pb.style.width=`${realD.profitScore}%`;
+          // ⑤ 경쟁
+          const cs=card.querySelector('[data-score="competition"]'),cb=card.querySelector('[data-bar="competition"]');
+          if(cs) cs.textContent=realD.competitionScore>60?'높음':'보통';
+          if(cb) cb.style.width=`${realD.competitionScore}%`;
+          // ⑥ 종합 등급
+          const ts2el=card.querySelector('[data-score="total"]'),tb=card.querySelector('[data-bar="total"]');
+          if(ts2el){
+            ts2el.textContent=`${ts2}점 ${gi2.grade}`;
+            ts2el.style.color=gi2.cls==='safe'?'var(--green)':gi2.cls==='caution'?'var(--yellow)':'var(--red)';
+          }
+          if(tb) tb.style.width=`${ts2}%`;
+          // ⑦ 평균 대비
+          const diffEl=card.querySelector('[data-diff]');
+          if(diffEl){
+            diffEl.style.color=diff2>=0?'var(--green)':'var(--red)';
+            diffEl.textContent=`${diff2>=0?'▲':'▼'} ${Math.abs(diff2)}점 (${realD.areaName||'지역'} 평균 대비)`;
+          }
+          // ⑧ 로딩 → 실시간 뱃지
+          const ind=card.querySelector('.rt-indicator');
+          if(ind){ind.textContent='📡 실시간';ind.style.background='var(--teal)';ind.style.display='inline';}
+          // ⑨ 선택된 업종의 실시간 데이터를 selectedBizData에도 반영
+          if(k===firstKey) selectedBizData=realD;
+        });
+      })
+      .catch(()=>{
+        recs.forEach(k=>{ const ind=document.querySelector(`.rec-card[data-key="${k}"] .rt-indicator`); if(ind)ind.style.display='none'; });
+      });
+  }
 }
 
 function selectRecCard(el,key){
   document.querySelectorAll('.rec-card').forEach(c=>{c.classList.remove('selected');c.querySelector('.rec-select-btn').textContent='이 업종 리스크 검증'});
   el.classList.add('selected');el.querySelector('.rec-select-btn').textContent='✓ 선택됨';
-  selectedBizData=BIZ_DB[key];selectedBiz=key;
+  // 실시간 데이터가 이미 적용됐으면 그걸 유지, 없으면 BIZ_DB 기본값 사용
+  selectedBizData = (realApiData ? computeRealScores(BIZ_DB[key], realApiData) : BIZ_DB[key]);
+  selectedBiz=key;
   document.getElementById('toStep2Btn').disabled=false;
   showToast(`${BIZ_DB[key].icon} "${key}" 선택!`);
 }
