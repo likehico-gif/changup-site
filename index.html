@@ -1830,209 +1830,232 @@ async function generateReport(tier) {
   const d = selectedBizData;
   if (!d) { showToast('먼저 업종과 지역을 선택해주세요'); return; }
 
-  const ts = calculateRiskScore(d);
-  const gi = getGradeInfo(ts, d.regulationFail);
-  const profitS = getProfitScore(d);
+  const ts        = calculateRiskScore(d);
+  const gi        = getGradeInfo(ts, d.regulationFail);
+  const profitS   = getProfitScore(d);
   const feasibleS = getFeasibleScore(d);
-  const now = new Date();
-  const dateStr = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
-  const reportNo = 'CJ-' + Date.now().toString().slice(-8);
-  const isPremium = tier === 'premium';
+  const now       = new Date();
+  const dateStr   = `${now.getFullYear()}.${String(now.getMonth()+1).padStart(2,'0')}.${String(now.getDate()).padStart(2,'0')}`;
+  const reportNo  = 'CJ-' + Date.now().toString().slice(-8);
+  const isPrem    = tier === 'premium';
 
-  const gradeEmoji  = gi.cls === 'safe' ? '✅' : gi.cls === 'caution' ? '⚠️' : '🚨';
-  const gradeColor  = gi.cls === 'safe' ? '#16a34a' : gi.cls === 'caution' ? '#ca8a04' : '#dc2626';
-  const gradeLabel  = gi.grade || (gi.cls === 'safe' ? '안전' : gi.cls === 'caution' ? '주의' : '위험');
+  const gradeColor = gi.cls === 'safe' ? '#16a34a' : gi.cls === 'caution' ? '#ca8a04' : '#dc2626';
+  const gradeBg    = gi.cls === 'safe' ? '#f0fdf4' : gi.cls === 'caution' ? '#fefce8' : '#fef2f2';
+  const gradeLabel = gi.grade || (gi.cls === 'safe' ? '안전' : gi.cls === 'caution' ? '주의' : '위험');
+  const gradeEmoji = gi.cls === 'safe' ? '✅' : gi.cls === 'caution' ? '⚠️' : '🚨';
 
-  const realStores = realApiData?.stores?.totalCount ?? '—';
-  const realZone   = realApiData?.landuse?.zoneType  ?? '—';
-  const realComp   = realApiData?.analysis?.competitionLevel ?? '—';
-  const realWarn   = realApiData?.analysis?.regulationWarning ?? null;
+  const realStores  = realApiData?.stores?.totalCount      ?? null;
+  const realSame    = realApiData?.stores?.sameTypeCount   ?? null;
+  const realZone    = realApiData?.landuse?.zoneType       ?? null;
+  const realComp    = realApiData?.analysis?.competitionLevel ?? null;
+  const realGrade   = realApiData?.analysis?.regulationGrade  ?? null;
+  const realWarn    = realApiData?.analysis?.regulationWarning ?? null;
+  const hasReal     = !!realApiData;
 
   const risks = [];
-  if (d.regulationFail) risks.push({ level: '심각', text: '인허가 불가 — 현재 위치 영업 허가 취득 불가능' });
-  if (d.competitionScore > 70) risks.push({ level: '주의', text: `경쟁 과밀 — 반경 500m 내 동종 업소 ${realStores}개 이상` });
-  if (d.locationScore < 50)   risks.push({ level: '주의', text: '입지 점수 낮음 — 유동인구·접근성 불리' });
-  if (realWarn) risks.push({ level: '주의', text: realWarn.replace(/^⚠️\s*/, '') });
+  if (d.regulationFail)        risks.push({ lv:'심각', txt:'인허가 불가 — 현재 위치 영업 허가 취득 불가능' });
+  if (d.competitionScore < 40) risks.push({ lv:'주의', txt:`경쟁 과밀 — 반경 500m 내 동종 업소 밀집 (경쟁강도 ${d.competitionScore}점)` });
+  if (d.locationScore < 50)    risks.push({ lv:'주의', txt:'입지 점수 낮음 — 유동인구·접근성 불리한 용도지역' });
+  if (realWarn) risks.push({ lv:'주의', txt: realWarn.replace(/^⚠️\s*/, '') });
 
-  // 테이블 셀 하나 (지표 박스)
-  const metricBox = (label, score, color, locked) => locked
-    ? `<td style="width:25%;padding:5px;"><div style="background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:8px;padding:16px 8px;text-align:center;">
-        <div style="font-size:10px;color:#94a3b8;margin-bottom:8px;">${label}</div>
-        <div style="font-size:28px;font-weight:900;color:#cbd5e1;line-height:1;">??</div>
-        <div style="font-size:9px;color:#94a3b8;margin-top:6px;">🔒 정밀 리포트 공개</div>
+  /* ── 헬퍼 ── */
+  const sectionTitle = (icon, text, borderColor) =>
+    `<div style="font-size:13px;font-weight:800;color:#1b2a4a;padding-bottom:8px;border-bottom:2px solid ${borderColor||'#1b2a4a'};margin-bottom:12px;">${icon} ${text}</div>`;
+
+  const metricBox = (label, score, color, locked, evidence) => locked
+    ? `<td style="width:25%;padding:5px;"><div style="background:#f1f5f9;border:1.5px solid #e2e8f0;border-radius:10px;padding:16px 8px 12px;text-align:center;">
+        <div style="font-size:10px;color:#94a3b8;font-weight:700;margin-bottom:10px;">${label}</div>
+        <div style="font-size:34px;font-weight:900;color:#cbd5e1;line-height:1">??</div>
+        <div style="font-size:9px;color:#94a3b8;margin-top:8px;">🔒 정밀 리포트 공개</div>
       </div></td>`
-    : `<td style="width:25%;padding:5px;"><div style="background:${color}18;border:1.5px solid ${color}40;border-radius:8px;padding:16px 8px;text-align:center;">
-        <div style="font-size:10px;color:#64748b;margin-bottom:6px;">${label}</div>
-        <div style="font-size:32px;font-weight:900;color:${color};line-height:1;">${score}</div>
-        <div style="font-size:9px;color:#94a3b8;margin-top:4px;">/ 100점</div>
-        <div style="background:#e2e8f0;border-radius:2px;height:4px;margin-top:10px;overflow:hidden;"><div style="background:${color};height:4px;width:${score}%;"></div></div>
+    : `<td style="width:25%;padding:5px;"><div style="background:${color}14;border:1.5px solid ${color}35;border-radius:10px;padding:16px 8px 12px;text-align:center;">
+        <div style="font-size:10px;color:#64748b;font-weight:700;margin-bottom:8px;">${label}</div>
+        <div style="font-size:38px;font-weight:900;color:${color};line-height:1">${score}</div>
+        <div style="font-size:9px;color:#94a3b8;margin-top:3px;">/ 100점</div>
+        <div style="background:#e2e8f0;border-radius:3px;height:5px;margin:10px 4px 0;overflow:hidden;"><div style="background:${color};height:5px;width:${score}%;border-radius:3px;"></div></div>
+        ${evidence ? `<div style="font-size:9px;color:${color};font-weight:700;margin-top:7px;line-height:1.3;">${evidence}</div>` : ''}
       </div></td>`;
 
-  // 수익 시뮬레이션 셀
   const scenarioBox = (emoji, label, val, bg, border, color) =>
-    `<td style="width:33%;padding:5px;"><div style="background:${bg};border:1px solid ${border};border-radius:8px;padding:14px;text-align:center;">
-      <div style="font-size:10px;color:${color};font-weight:700;margin-bottom:6px;">${emoji} ${label}</div>
-      <div style="font-size:22px;font-weight:900;color:${color};">${val}<span style="font-size:11px;">만원/월</span></div>
+    `<td style="width:33%;padding:5px;"><div style="background:${bg};border:1.5px solid ${border};border-radius:10px;padding:16px 8px;text-align:center;">
+      <div style="font-size:10px;color:${color};font-weight:700;margin-bottom:8px;">${emoji} ${label}</div>
+      <div style="font-size:26px;font-weight:900;color:${color}">${val}<span style="font-size:12px;font-weight:600;margin-left:2px;">만원/월</span></div>
     </div></td>`;
 
-  const infoBox = (label, val) =>
-    `<td style="width:33%;padding:5px;"><div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;text-align:center;">
-      <div style="font-size:10px;color:#64748b;margin-bottom:4px;">${label}</div>
-      <div style="font-size:15px;font-weight:900;color:#1b2a4a;">${val}</div>
+  const infoBox = (label, val, sub) =>
+    `<td style="width:33%;padding:5px;"><div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px 8px;text-align:center;">
+      <div style="font-size:10px;color:#64748b;font-weight:700;margin-bottom:5px;">${label}</div>
+      <div style="font-size:17px;font-weight:900;color:#1b2a4a;">${val}</div>
+      ${sub ? `<div style="font-size:9px;color:#94a3b8;margin-top:3px;">${sub}</div>` : ''}
     </div></td>`;
+
+  const compScore  = 100 - d.competitionScore;
+  const compColor  = d.competitionScore < 40 ? '#dc2626' : d.competitionScore < 60 ? '#ca8a04' : '#16a34a';
+  const locColor   = d.locationScore < 40 ? '#ca8a04' : d.locationScore < 65 ? '#2563eb' : '#16a34a';
+  const profEvi    = d._evidence?.profit  || (hasReal ? '소상공인진흥공단 경쟁 보정' : '업종 평균 기준');
+  const compEvi    = d._evidence?.competition || (hasReal ? `반경500m 상권 분석` : '상권분석 DB 기준');
+  const locEvi     = d._evidence?.location || (hasReal ? realZone || 'VWorld 용도지역' : '위치 데이터 기준');
+  const regEvi     = d._evidence?.regulation || (hasReal ? `규제 적합도 ${realGrade||'확인필요'}` : '건축법·용도지역 기준');
 
   const html = `<div id="pdfContent" style="width:794px;font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#1e293b;background:#fff;">
 
-  <!-- ① 헤더 배너 -->
-  <div style="background:#1b2a4a;padding:30px 40px 24px;">
+<!-- ①  헤더 -->
+<div style="background:#1b2a4a;padding:28px 40px 22px;">
+  <table style="width:100%;border-collapse:collapse;margin-bottom:16px;"><tr>
+    <td style="vertical-align:top;padding:0;">
+      <div style="font-size:9px;letter-spacing:2.5px;color:rgba(255,255,255,.35);margin-bottom:5px;">CHANGUP JIDO · 창업 리스크 분석 리포트</div>
+      <div style="font-size:24px;font-weight:900;color:#fff;line-height:1.15;margin-bottom:10px;">창업 리스크 분석 리포트</div>
+      <div style="display:inline-block;background:${isPrem?'#dc2626':'rgba(255,255,255,.15)'};color:#fff;font-size:9px;font-weight:800;padding:4px 14px;border-radius:100px;letter-spacing:1px;">${isPrem?'PREMIUM REPORT':'FREE SUMMARY'}</div>
+      ${hasReal?`<div style="display:inline-block;background:rgba(52,211,153,.2);color:#34d399;font-size:9px;font-weight:800;padding:4px 12px;border-radius:100px;letter-spacing:1px;margin-left:6px;">LIVE DATA</div>`:''}
+    </td>
+    <td style="vertical-align:top;text-align:right;padding:0;font-size:11px;color:rgba(255,255,255,.45);line-height:2.1;">
+      <div>리포트 번호 <strong style="color:#fff">${reportNo}</strong></div>
+      <div>발행일 <strong style="color:#fff">${dateStr}</strong></div>
+      <div>소상공인진흥공단 · 국토교통부 · VWorld</div>
+    </td>
+  </tr></table>
+
+  <!-- 업종/지역/점수 패널 -->
+  <div style="background:rgba(255,255,255,.1);border-radius:10px;padding:16px 22px;">
     <table style="width:100%;border-collapse:collapse;"><tr>
-      <td style="vertical-align:top;padding:0;">
-        <div style="font-size:10px;letter-spacing:2px;color:rgba(255,255,255,.4);margin-bottom:6px;">CHANGUP JIDO · 계약 전 보증금 보호 검증기</div>
-        <div style="font-size:22px;font-weight:900;color:#fff;margin-bottom:8px;">창업 리스크 분석 리포트</div>
-        <div style="display:inline-block;background:${isPremium?'#dc2626':'rgba(255,255,255,.18)'};color:#fff;font-size:10px;font-weight:800;padding:3px 12px;border-radius:100px;">${isPremium?'PREMIUM REPORT':'FREE SUMMARY'}</div>
+      <td style="padding:0 24px 0 0;vertical-align:middle;">
+        <div style="font-size:9px;color:rgba(255,255,255,.4);font-weight:700;margin-bottom:5px;">분석 업종</div>
+        <div style="font-size:19px;font-weight:900;color:#fff;">${d.icon||''} ${selectedBiz||'—'}</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5);margin-top:2px;">${d.type||''}</div>
       </td>
-      <td style="vertical-align:top;text-align:right;padding:0;font-size:11px;color:rgba(255,255,255,.5);line-height:2;">
-        <div>리포트 번호: <strong style="color:#fff;">${reportNo}</strong></div>
-        <div>발행일: <strong style="color:#fff;">${dateStr}</strong></div>
-        <div>데이터: 소상공인진흥공단 · 국토교통부</div>
+      <td style="padding:0 0 0 24px;border-left:1px solid rgba(255,255,255,.2);vertical-align:middle;">
+        <div style="font-size:9px;color:rgba(255,255,255,.4);font-weight:700;margin-bottom:5px;">분석 지역</div>
+        <div style="font-size:19px;font-weight:900;color:#fff;">📍 ${selectedArea||'선택 지역'}</div>
+        ${selectedCoords ? `<div style="font-size:10px;color:rgba(255,255,255,.4);margin-top:2px;">좌표: ${selectedCoords.lat?.toFixed(4)}, ${selectedCoords.lng?.toFixed(4)}</div>` : ''}
+      </td>
+      <td style="width:175px;padding:0 0 0 24px;border-left:1px solid rgba(255,255,255,.2);text-align:center;vertical-align:middle;">
+        <div style="font-size:9px;color:rgba(255,255,255,.4);font-weight:700;margin-bottom:6px;">종합 창업 안전 점수</div>
+        <div style="font-size:56px;font-weight:900;color:${gi.cls==='safe'?'#4ade80':gi.cls==='caution'?'#fbbf24':'#f87171'};line-height:1;">${ts}</div>
+        <div style="font-size:13px;font-weight:800;color:${gi.cls==='safe'?'#4ade80':gi.cls==='caution'?'#fbbf24':'#f87171'};margin-top:4px;">${gradeEmoji} ${gradeLabel}</div>
       </td>
     </tr></table>
+  </div>
+</div>
 
-    <!-- 업종 / 지역 / 등급 -->
-    <div style="background:rgba(255,255,255,.1);border-radius:8px;padding:14px 20px;margin-top:18px;">
-      <table style="width:100%;border-collapse:collapse;"><tr>
-        <td style="padding:0 20px 0 0;border-right:1px solid rgba(255,255,255,.2);">
-          <div style="font-size:10px;color:rgba(255,255,255,.45);margin-bottom:4px;">분석 업종</div>
-          <div style="font-size:17px;font-weight:800;color:#fff;">${d.icon || ''} ${selectedBiz || '—'}</div>
-        </td>
-        <td style="padding:0 0 0 20px;">
-          <div style="font-size:10px;color:rgba(255,255,255,.45);margin-bottom:4px;">분석 지역</div>
-          <div style="font-size:17px;font-weight:800;color:#fff;">📍 ${selectedArea || '선택 지역'}</div>
-        </td>
-        <td style="text-align:center;width:130px;padding:0 0 0 20px;border-left:1px solid rgba(255,255,255,.2);">
-          <div style="font-size:10px;color:rgba(255,255,255,.45);margin-bottom:4px;">종합 등급</div>
-          <div style="font-size:28px;font-weight:900;color:${gi.cls==='safe'?'#4ade80':gi.cls==='caution'?'#fbbf24':'#f87171'}">${gradeEmoji} ${gradeLabel}</div>
-        </td>
-      </tr></table>
-    </div>
+<!-- ② 본문 -->
+<div style="padding:22px 40px;">
+
+  <!-- 4대 핵심 지표 -->
+  <div style="margin-bottom:20px;">
+    ${sectionTitle('📊','4대 핵심 지표')}
+    <table style="width:100%;border-collapse:collapse;"><tr>
+      ${metricBox('수익성', profitS, '#16a34a', false, isPrem ? profEvi : null)}
+      ${metricBox('실현가능성', feasibleS, feasibleS<50?'#dc2626':feasibleS<65?'#ca8a04':'#16a34a', false, isPrem ? (d._evidence?.regulation||null) : null)}
+      ${metricBox('경쟁 우위', compScore, compColor, !isPrem, isPrem ? compEvi : null)}
+      ${metricBox('입지 점수', d.locationScore, locColor, !isPrem, isPrem ? locEvi : null)}
+    </tr></table>
+    ${!isPrem ? '<div style="text-align:center;font-size:10px;color:#94a3b8;margin-top:8px;padding:8px;background:#f8fafc;border-radius:6px;">🔒 경쟁 우위·입지 점수는 <strong>정밀 리포트</strong>에서 공개됩니다</div>' : ''}
   </div>
 
-  <!-- ② 본문 -->
-  <div style="padding:22px 40px;">
-
-    <!-- 4대 핵심 지표 -->
-    <div style="margin-bottom:18px;">
-      <div style="font-size:12px;font-weight:800;color:#1b2a4a;padding-bottom:7px;border-bottom:2px solid #1b2a4a;margin-bottom:10px;">📊 4대 핵심 지표</div>
-      <table style="width:100%;border-collapse:collapse;"><tr>
-        ${metricBox('수익성', profitS, '#16a34a', false)}
-        ${metricBox('실현가능성', feasibleS, feasibleS<50?'#dc2626':feasibleS<65?'#ca8a04':'#16a34a', false)}
-        ${metricBox('경쟁강도 (역)', 100 - d.competitionScore, d.competitionScore>70?'#dc2626':d.competitionScore>50?'#ca8a04':'#16a34a', !isPremium)}
-        ${metricBox('입지점수', d.locationScore, d.locationScore<50?'#ca8a04':'#2563eb', !isPremium)}
-      </tr></table>
-      ${!isPremium ? '<div style="text-align:center;font-size:10px;color:#94a3b8;margin-top:6px;">🔒 경쟁강도·입지점수는 정밀 리포트에서 확인 가능합니다</div>' : ''}
-    </div>
-
-    ${isPremium ? `
-    <!-- 실제 공공데이터 (프리미엄) -->
-    <div style="margin-bottom:18px;">
-      <div style="font-size:12px;font-weight:800;color:#1b2a4a;padding-bottom:7px;border-bottom:2px solid #1b2a4a;margin-bottom:10px;">🛰️ 실시간 공공데이터 (소상공인진흥공단)</div>
-      <table style="width:100%;border-collapse:collapse;"><tr>
-        <td style="width:33%;padding:5px;"><div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;text-align:center;">
-          <div style="font-size:10px;color:#64748b;margin-bottom:4px;">반경 500m 상가 수</div>
-          <div style="font-size:26px;font-weight:900;color:#1b2a4a;">${realStores}<span style="font-size:12px;color:#64748b;">개</span></div>
-        </div></td>
-        <td style="width:33%;padding:5px;"><div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;text-align:center;">
-          <div style="font-size:10px;color:#64748b;margin-bottom:4px;">경쟁 강도</div>
-          <div style="font-size:20px;font-weight:900;color:${realComp==='높음'||realComp==='매우높음'?'#dc2626':'#16a34a'}">${realComp}</div>
-        </div></td>
-        <td style="width:33%;padding:5px;"><div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px;text-align:center;">
-          <div style="font-size:10px;color:#64748b;margin-bottom:4px;">용도지역</div>
-          <div style="font-size:15px;font-weight:800;color:#1b2a4a;">${realZone}</div>
-        </div></td>
-      </tr></table>
-    </div>
-    ` : ''}
-
-    <!-- 수익 시뮬레이션 -->
-    <div style="margin-bottom:18px;">
-      <div style="font-size:12px;font-weight:800;color:#1b2a4a;padding-bottom:7px;border-bottom:2px solid #1b2a4a;margin-bottom:10px;">💰 수익성 시뮬레이션</div>
-      ${isPremium ? `
-      <table style="width:100%;border-collapse:collapse;margin-bottom:8px;"><tr>
-        ${scenarioBox('😓','보수적 시나리오', d.revPess, '#fef2f2', '#fca5a5', '#dc2626')}
-        ${scenarioBox('😊','기본 시나리오',   d.revBase, '#f0fdf4', '#86efac', '#16a34a')}
-        ${scenarioBox('🚀','낙관 시나리오',   d.revOpt,  '#eff6ff', '#93c5fd', '#2563eb')}
-      </tr></table>
-      <table style="width:100%;border-collapse:collapse;"><tr>
-        ${infoBox('손익분기점', d.bepMonths + '개월')}
-        ${infoBox('예상 초기비용', (d.costMin/10000).toFixed(0)+'천~'+(d.costMax/10000).toFixed(0)+'천만원')}
-        ${infoBox('1년차 예상 매출', (d.yearlyRev?.y1?.toLocaleString?.() ?? '—')+'만원')}
-      </tr></table>
-      ` : `
-      <div style="background:#f8fafc;border:2px dashed #e2e8f0;border-radius:8px;padding:22px;text-align:center;">
-        <div style="font-size:22px;margin-bottom:8px;">🔒</div>
-        <div style="font-size:13px;font-weight:700;color:#64748b;margin-bottom:4px;">정밀 리포트에서 확인 가능</div>
-        <div style="font-size:11px;color:#94a3b8;">보수적·기본·낙관 3가지 시나리오 + 손익분기점 + 초기비용 분석</div>
-      </div>
-      `}
-    </div>
-
-    <!-- 리스크 경고 -->
-    <div style="margin-bottom:18px;">
-      <div style="font-size:12px;font-weight:800;color:#1b2a4a;padding-bottom:7px;border-bottom:2px solid ${risks.length>0?'#dc2626':'#16a34a'};margin-bottom:10px;">
-        🚨 주요 리스크 ${risks.length > 0 ? risks.length+'건 발견' : '— 이상 없음'}
-      </div>
-      ${risks.length > 0 ? risks.map(r=>`
-        <div style="padding:9px 14px;background:${r.level==='심각'?'#fef2f2':'#fffbeb'};border-left:3px solid ${r.level==='심각'?'#dc2626':'#ca8a04'};border-radius:0 6px 6px 0;margin-bottom:7px;">
-          <table style="width:100%;border-collapse:collapse;"><tr>
-            <td style="width:46px;padding:0;vertical-align:top;"><span style="font-size:10px;font-weight:800;color:${r.level==='심각'?'#dc2626':'#ca8a04'};">[${r.level}]</span></td>
-            <td style="padding:0;font-size:11px;color:#1e293b;line-height:1.5;">${r.text}</td>
-          </tr></table>
-        </div>
-      `).join('') : `
-        <div style="padding:14px;background:#f0fdf4;border:1px solid #86efac;border-radius:8px;text-align:center;font-size:12px;">
-          ✅ <strong>주요 리스크 없음</strong> — 현재 조건 기준 안정적
-        </div>
-      `}
-    </div>
-
-    ${isPremium && d.regulations ? `
-    <!-- 법규·인허가 체크리스트 (프리미엄) -->
-    <div style="margin-bottom:18px;">
-      <div style="font-size:12px;font-weight:800;color:#1b2a4a;padding-bottom:7px;border-bottom:2px solid #1b2a4a;margin-bottom:10px;">⚖️ 법규·인허가 체크리스트</div>
-      ${d.regulations.map(r=>`
-        <div style="padding:8px 0;border-bottom:1px solid #f1f5f9;">
-          <table style="width:100%;border-collapse:collapse;"><tr>
-            <td style="width:24px;padding:0;font-size:14px;">${r.ok?'✅':'❌'}</td>
-            <td style="padding:0 0 0 6px;font-size:11px;color:#1e293b;">${r.text}</td>
-          </tr></table>
-        </div>
-      `).join('')}
-    </div>` : ''}
-
-    ${!isPremium ? `
-    <!-- 무료: 업그레이드 CTA -->
-    <div style="margin-bottom:18px;background:#1b2a4a;border-radius:10px;padding:18px 24px;text-align:center;">
-      <div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:6px;">🔓 정밀 리포트에서 추가로 확인하세요</div>
-      <div style="font-size:11px;color:rgba(255,255,255,.6);line-height:1.9;">
-        ✓ 경쟁강도·입지점수 상세 분석&nbsp;&nbsp;·&nbsp;&nbsp;✓ 3가지 수익 시나리오 &amp; 손익분기점<br>
-        ✓ 실제 공공데이터 상권 분석&nbsp;&nbsp;·&nbsp;&nbsp;✓ 법규·인허가 체크리스트
-      </div>
-      <div style="margin-top:10px;font-size:12px;font-weight:900;color:#fbbf24;">changup-map.netlify.app 에서 정밀 리포트 열기 →</div>
-    </div>
-    ` : ''}
-
-    <!-- 면책 고지 -->
-    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px;font-size:10px;color:#94a3b8;line-height:1.7;">
-      <strong style="color:#64748b;">⚠ 면책 고지</strong><br>
-      본 리포트는 소상공인진흥공단·국토교통부 공공데이터를 기반으로 AI가 생성한 참고 자료입니다.
-      실제 창업 결정 시 공인중개사·행정사 등 전문가와 현장 확인을 병행하세요.
-      데이터 기준: ${dateStr} | 번호: ${reportNo}
-    </div>
+  ${isPrem && hasReal ? `
+  <!-- 실시간 공공데이터 -->
+  <div style="margin-bottom:20px;">
+    ${sectionTitle('🛰️','실시간 공공데이터')}
+    <table style="width:100%;border-collapse:collapse;"><tr>
+      <td style="width:25%;padding:5px;"><div style="background:#f0fdf4;border:1px solid #86efac;border-radius:10px;padding:14px;text-align:center;">
+        <div style="font-size:9px;color:#16a34a;font-weight:700;margin-bottom:5px;">반경500m 상가</div>
+        <div style="font-size:28px;font-weight:900;color:#1b2a4a;">${realStores??'—'}<span style="font-size:12px;color:#64748b;">개</span></div>
+      </div></td>
+      <td style="width:25%;padding:5px;"><div style="background:#eff6ff;border:1px solid #93c5fd;border-radius:10px;padding:14px;text-align:center;">
+        <div style="font-size:9px;color:#2563eb;font-weight:700;margin-bottom:5px;">동종 업소</div>
+        <div style="font-size:28px;font-weight:900;color:#1b2a4a;">${realSame??'—'}<span style="font-size:12px;color:#64748b;">개</span></div>
+      </div></td>
+      <td style="width:25%;padding:5px;"><div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;text-align:center;">
+        <div style="font-size:9px;color:#64748b;font-weight:700;margin-bottom:5px;">경쟁 강도</div>
+        <div style="font-size:18px;font-weight:900;color:${realComp==='높음'||realComp==='매우높음'?'#dc2626':realComp==='낮음'?'#16a34a':'#ca8a04'}">${realComp??'—'}</div>
+      </div></td>
+      <td style="width:25%;padding:5px;"><div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:14px;text-align:center;">
+        <div style="font-size:9px;color:#64748b;font-weight:700;margin-bottom:5px;">용도지역</div>
+        <div style="font-size:14px;font-weight:900;color:#1b2a4a;">${realZone??'—'}</div>
+      </div></td>
+    </tr></table>
   </div>
+  ` : ''}
+
+  <!-- 수익성 시뮬레이션 -->
+  <div style="margin-bottom:20px;">
+    ${sectionTitle('💰','수익성 시뮬레이션')}
+    ${isPrem ? `
+    <table style="width:100%;border-collapse:collapse;margin-bottom:8px;"><tr>
+      ${scenarioBox('😓','보수적',d.revPess,'#fef2f2','#fca5a5','#dc2626')}
+      ${scenarioBox('😊','기본',  d.revBase,'#f0fdf4','#86efac','#16a34a')}
+      ${scenarioBox('🚀','낙관',  d.revOpt, '#eff6ff','#93c5fd','#2563eb')}
+    </tr></table>
+    <table style="width:100%;border-collapse:collapse;"><tr>
+      ${infoBox('손익분기점', d.bepMonths+'개월', '투자금 회수 기준')}
+      ${infoBox('예상 초기비용', `${(d.costMin/10000).toFixed(0)}천~${(d.costMax/10000).toFixed(0)}천만원`, '임차+인테리어+운전')}
+      ${infoBox('1년차 예상 매출', `${(d.yearlyRev?.y1?.toLocaleString?.()??'—')}만원`, '기본 시나리오 기준')}
+    </tr></table>
+    ` : `
+    <div style="background:#f8fafc;border:2px dashed #e2e8f0;border-radius:10px;padding:26px;text-align:center;">
+      <div style="font-size:26px;margin-bottom:8px;">🔒</div>
+      <div style="font-size:13px;font-weight:700;color:#64748b;margin-bottom:5px;">정밀 리포트 전용</div>
+      <div style="font-size:11px;color:#94a3b8;line-height:1.8;">보수적·기본·낙관 3가지 시나리오 수익 예측<br>손익분기점 · 초기비용 · 1~3년차 매출 예측</div>
+    </div>`}
+  </div>
+
+  <!-- 리스크 경고 -->
+  <div style="margin-bottom:20px;">
+    ${sectionTitle('🚨','주요 리스크 진단', risks.length>0?'#dc2626':'#16a34a')}
+    ${risks.length > 0 ? risks.map(r=>`
+      <div style="padding:10px 16px;background:${r.lv==='심각'?'#fef2f2':'#fffbeb'};border-left:4px solid ${r.lv==='심각'?'#dc2626':'#ca8a04'};border-radius:0 8px 8px 0;margin-bottom:8px;">
+        <table style="width:100%;border-collapse:collapse;"><tr>
+          <td style="width:52px;padding:0;vertical-align:top;">
+            <span style="display:inline-block;background:${r.lv==='심각'?'#dc2626':'#ca8a04'};color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:100px;">${r.lv}</span>
+          </td>
+          <td style="padding:0 0 0 6px;font-size:11px;color:#1e293b;line-height:1.6;">${r.txt}</td>
+        </tr></table>
+      </div>`).join('') : `
+      <div style="padding:16px;background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;text-align:center;">
+        <div style="font-size:16px;margin-bottom:4px;">✅</div>
+        <div style="font-size:12px;font-weight:700;color:#16a34a;">주요 리스크 없음 — 현재 조건 기준 안정적</div>
+      </div>`}
+  </div>
+
+  ${isPrem && d.regulations ? `
+  <!-- 법규·인허가 체크리스트 -->
+  <div style="margin-bottom:20px;">
+    ${sectionTitle('⚖️','법규·인허가 체크리스트')}
+    <table style="width:100%;border-collapse:collapse;">
+      ${d.regulations.map((r,i)=>`
+        <tr style="border-bottom:1px solid #f1f5f9;">
+          <td style="width:26px;padding:8px 0;font-size:14px;">${r.ok?'✅':'❌'}</td>
+          <td style="padding:8px 6px;font-size:11px;color:${r.ok?'#1e293b':'#dc2626'};line-height:1.5;">${r.text}</td>
+          <td style="width:60px;text-align:right;padding:8px 0;">
+            <span style="font-size:9px;font-weight:700;color:${r.ok?'#16a34a':'#dc2626'};">${r.ok?'통과':'주의'}</span>
+          </td>
+        </tr>`).join('')}
+    </table>
+  </div>` : ''}
+
+  ${!isPrem ? `
+  <!-- 무료: 업그레이드 CTA -->
+  <div style="margin-bottom:20px;background:linear-gradient(135deg,#1b2a4a,#1e3a5f);border-radius:12px;padding:22px 28px;text-align:center;">
+    <div style="font-size:14px;font-weight:900;color:#fff;margin-bottom:8px;">🔓 정밀 리포트로 더 깊은 분석을</div>
+    <div style="font-size:11px;color:rgba(255,255,255,.6);line-height:2;">
+      ✓ 경쟁 우위·입지점수 상세 분석&nbsp;&nbsp;&nbsp;·&nbsp;&nbsp;&nbsp;✓ 3가지 수익 시나리오 &amp; 손익분기점<br>
+      ✓ 실시간 공공데이터 상권 분석&nbsp;&nbsp;&nbsp;·&nbsp;&nbsp;&nbsp;✓ 법규·인허가 전체 체크리스트
+    </div>
+    <div style="margin-top:12px;display:inline-block;background:#fbbf24;color:#1b2a4a;font-size:12px;font-weight:900;padding:8px 24px;border-radius:8px;">changup-map.netlify.app 에서 정밀 리포트 열기 →</div>
+  </div>` : ''}
+
+  <!-- 면책 고지 -->
+  <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px 16px;font-size:9.5px;color:#94a3b8;line-height:1.8;">
+    <strong style="color:#64748b;">⚠ 면책 고지</strong>&nbsp;
+    본 리포트는 소상공인진흥공단·국토교통부 공공데이터를 기반으로 생성한 참고 자료이며 법적 효력이 없습니다.
+    실제 창업 결정 전 반드시 공인중개사·행정사 등 전문가와 현장 확인을 병행하시기 바랍니다.
+    &nbsp;|&nbsp; 데이터 기준: ${dateStr}&nbsp;&nbsp;리포트 번호: ${reportNo}
+  </div>
+
+</div>
 </div>`;
 
-  // PDF 생성
-  showToast('📋 리포트 생성 중... 잠시만 기다려주세요');
+  showToast('📋 리포트 생성 중...');
 
   const container = document.createElement('div');
   container.style.cssText = 'position:fixed;top:0;left:0;width:794px;visibility:hidden;pointer-events:none;z-index:9999;';
@@ -2040,32 +2063,31 @@ async function generateReport(tier) {
   document.body.appendChild(container);
 
   const element = container.querySelector('#pdfContent');
-  const filename = `창업지도_${selectedBiz}_${selectedArea || '분석'}_${dateStr}.pdf`;
+  const filename = `창업지도_${selectedBiz}_${selectedArea||'분석'}_${dateStr}.pdf`;
 
-  // 폰트·렌더링 대기
-  await new Promise(r => setTimeout(r, 600));
+  // 렌더링 대기 후 실제 높이 측정
+  await new Promise(r => setTimeout(r, 700));
+  const pdfHeight = Math.max(1050, (element.scrollHeight || element.offsetHeight) + 30);
 
   html2pdf().set({
     margin: 0,
-    filename: filename,
-    image: { type: 'jpeg', quality: 0.95 },
+    filename,
+    image: { type: 'jpeg', quality: 0.97 },
     html2canvas: {
       scale: 2,
       useCORS: true,
       logging: false,
       width: 794,
       windowWidth: 794,
-      x: 0,
-      y: 0,
       scrollX: 0,
       scrollY: 0,
       backgroundColor: '#ffffff'
     },
-    jsPDF: { unit: 'px', format: [794, 1123], orientation: 'portrait' }
+    jsPDF: { unit: 'px', format: [794, pdfHeight], orientation: 'portrait' }
   }).from(element).save().then(() => {
     document.body.removeChild(container);
     showToast('✅ 리포트 다운로드 완료!');
-  }).catch((err) => {
+  }).catch(err => {
     console.error('PDF 오류:', err);
     document.body.removeChild(container);
     showToast('⚠ 다운로드 실패. 다시 시도해주세요.');
