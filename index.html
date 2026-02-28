@@ -610,7 +610,7 @@ footer{background:var(--navy-dark);color:rgba(255,255,255,.35);font-size:12px;pa
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 /* ── MYPAGE MODAL ───────────────────────────────── */
-.mp-overlay{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.75);display:none;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;}
+.mp-overlay{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.75);display:none;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;-webkit-overflow-scrolling:touch;}
 .mp-overlay.open{display:flex;}
 .mp-modal{background:#fff;border-radius:16px;width:min(680px,100%);margin:auto;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden;}
 .mp-header{background:var(--navy);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;}
@@ -712,6 +712,136 @@ footer{background:var(--navy-dark);color:rgba(255,255,255,.35);font-size:12px;pa
 .policy-tag{font-size:11px;padding:3px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:100px;color:var(--muted);}
 .policy-link{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--blue);text-decoration:none;margin-top:10px;}
 .policy-link:hover{text-decoration:underline;}
+
+/* ══════════════════════════════════════════════
+   모바일 반응형 — 종합 개선
+   기준: 768px / 600px / 480px / 375px
+══════════════════════════════════════════════ */
+
+/* ── Toast: 모바일 너비 제한 + z-index 최상단 ── */
+.toast{z-index:20000;max-width:calc(100vw - 32px);white-space:normal;text-align:center;}
+
+/* ── iOS Safari fixed 스크롤 버그 수정 ── */
+.mp-overlay,.page-overlay,.auth-overlay{-webkit-overflow-scrolling:touch;overflow-y:scroll;}
+
+/* ── Nav: 모바일에서 gap·height 축소 ── */
+@media(max-width:768px){
+  .nav{padding:0 14px;height:52px;}
+  .nav-left{gap:10px;}
+  .nav-logo-text{font-size:15px;}
+  .nav-logo-mark{width:30px;height:30px;font-size:14px;}
+  #authGuestBtns .nav-btn:last-child{display:none;} /* 회원가입 버튼 숨김 */
+  .nav-btn{padding:6px 12px;font-size:12px;}
+  #mypageNavBtn{display:none !important;}
+}
+
+/* ── Hero: 상하 패딩 모바일 축소 ── */
+@media(max-width:600px){
+  .hero{padding:32px 16px 64px;}
+  .hero h1{font-size:clamp(20px,6vw,32px);}
+  .hero-sub-v6{font-size:13px;}
+  .trust-trio{gap:12px;}
+  .trust-item{font-size:10px;}
+}
+
+/* ── Stats Bar: 모바일 패딩 감소 ── */
+@media(max-width:600px){
+  .stat-item{padding:14px 8px;}
+  .stat-num{font-size:20px !important;}
+  .stat-label{font-size:11px !important;}
+}
+
+/* ── 서비스 카드 ── */
+@media(max-width:480px){
+  .service-grid{grid-template-columns:1fr 1fr !important;gap:10px;}
+  .svc-icon{font-size:26px;}
+  .svc-title{font-size:13px;}
+  .svc-desc{font-size:11px;}
+}
+
+/* ── HOW IT WORKS: 2칼럼 → 1칼럼, 폰트 개선 ── */
+@media(max-width:480px){
+  .how-grid{grid-template-columns:repeat(2,1fr) !important;}
+}
+@media(max-width:360px){
+  .how-grid{grid-template-columns:1fr !important;}
+}
+.how-desc{font-size:12px !important;}
+.how-num{font-size:13px !important;}
+
+/* ── 검색박스 모바일 ── */
+@media(max-width:480px){
+  .search-box{padding:6px;}
+  .search-field input{padding:11px 0;font-size:13px;}
+  .search-btn{padding:11px 16px;font-size:13px;}
+  .search-tags .stag{font-size:11px;padding:4px 10px;}
+}
+
+/* ── Result / Step 영역 ── */
+@media(max-width:600px){
+  .result-inner{padding:0 12px !important;}
+  .step-header{padding:14px 16px !important;}
+  .step-title{font-size:14px !important;}
+}
+
+/* ── Step1 추천카드: 모바일 1열 ── */
+@media(max-width:560px){
+  #recCards{grid-template-columns:1fr !important;}
+  .rec-card{padding:16px !important;}
+  .rec-name{font-size:15px !important;}
+}
+
+/* ── Step2 이중 점수: 모바일 스택 ── */
+@media(max-width:500px){
+  #dualScoreGrid{grid-template-columns:1fr !important;}
+  .dual-score-card{padding:16px !important;}
+  .ds-score{font-size:44px !important;}
+}
+
+/* ── 4대 지표: 모바일 2x2 → 세로 4열 ── */
+@media(max-width:400px){
+  #quadScores{grid-template-columns:1fr 1fr !important;}
+}
+
+/* ── 마이페이지 모달: 모바일 패딩 최소화 ── */
+@media(max-width:480px){
+  .mp-overlay,.page-overlay,.auth-overlay{padding:0 !important;align-items:flex-end !important;}
+  .mp-modal,.page-modal,.auth-modal{border-radius:16px 16px 0 0 !important;width:100% !important;max-height:92vh;overflow-y:auto;}
+  .mp-body,.page-body,.auth-body{padding:16px !important;}
+  .mp-tabs,.auth-tabs{padding:0 12px !important;}
+  .mp-tab,.auth-tab{padding:12px 12px !important;font-size:13px !important;}
+  .mp-stat-grid{grid-template-columns:repeat(3,1fr);gap:8px;}
+  .mp-stat-box{padding:12px 6px;}
+}
+
+/* ── 핫트렌드: 1열 ── */
+@media(max-width:480px){
+  .trend-grid{grid-template-columns:1fr !important;}
+  #trendBody > div:last-of-type{grid-template-columns:repeat(2,1fr) !important;}
+}
+
+/* ── 정책카드: 헤더 세로 정렬 ── */
+@media(max-width:480px){
+  .policy-card-header{flex-direction:column;gap:6px;}
+  .policy-amount{font-size:15px;}
+}
+
+/* ── 공통 섹션 타이틀 모바일 ── */
+@media(max-width:480px){
+  .services-title{font-size:16px !important;}
+  .sec-title{font-size:17px !important;}
+}
+
+/* ── 375px 이하 초소형 대응 ── */
+@media(max-width:375px){
+  body{font-size:13px;}
+  .nav{padding:0 10px;}
+  .nav-logo-text{font-size:14px;}
+  .hero h1{font-size:19px;}
+  .search-btn{padding:10px 12px;font-size:12px;}
+  .rec-cost .rc-val{font-size:13px !important;}
+  .ds-score{font-size:38px !important;}
+}
 </style>
 </head>
 <body>
