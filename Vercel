@@ -1,0 +1,6 @@
+cd C:\Users\PCLAND\Desktop\changup-site
+git init
+git add .
+git commit -m "Vercel 마이그레이션"
+git remote add origin https://github.com/likehico-gif/changup-site.git
+git push -u origin main
