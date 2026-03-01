@@ -98,6 +98,13 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans KR',-apple-sy
 .stag{font-size:12px;padding:5px 12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.6);border-radius:100px;cursor:pointer;transition:all .15s;font-weight:500}
 .stag:hover{background:rgba(255,255,255,.15);color:#fff}
 .stag.active{background:var(--red);border-color:var(--red);color:#fff}
+/* 카테고리 칩 */
+.ctag{font-size:12px;padding:6px 14px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.75);border-radius:100px;cursor:pointer;transition:all .15s;font-weight:700;white-space:nowrap}
+.ctag:hover{background:rgba(255,255,255,.15);color:#fff;transform:translateY(-1px)}
+.ctag.active{background:var(--cat-clr,var(--blue));border-color:var(--cat-clr,var(--blue));color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+/* 서브 칩 행 */
+.sub-row{animation:subFadeIn .2s ease}
+@keyframes subFadeIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
 
 /* v6: 신뢰 트리오 */
 .trust-trio{display:flex;justify-content:center;gap:20px;margin-top:22px;flex-wrap:wrap}
@@ -896,7 +903,6 @@ footer{background:var(--navy-dark);color:rgba(255,255,255,.35);font-size:12px;pa
       </div>
     </div>
     <button class="nav-btn" id="mypageNavBtn" onclick="openMypage()">마이페이지</button>
-    <a href="platform.html" class="nav-btn" style="background:linear-gradient(135deg,#7c3aed,#4f46e5);border-color:#7c3aed;color:#fff;text-decoration:none;display:flex;align-items:center;gap:5px;" title="AI 기반 창업 실행 지원 플랫폼">🚀 AI 플랫폼</a>
     <button class="nav-btn primary" onclick="scrollToSearch()">무료 검증 시작</button>
   </div>
 </nav>
@@ -945,32 +951,27 @@ footer{background:var(--navy-dark);color:rgba(255,255,255,.35);font-size:12px;pa
       </button>
     </div>
 
-    <div class="search-tags">
-      <span class="stag" onclick="selectBiz(this,'카페')">☕ 카페</span>
-      <span class="stag" onclick="selectBiz(this,'치킨집')">🍗 치킨집</span>
-      <span class="stag" onclick="selectBiz(this,'고깃집')">🥩 고깃집</span>
-      <span class="stag" onclick="selectBiz(this,'분식집')">🍜 분식집</span>
-      <span class="stag" onclick="selectBiz(this,'베이커리')">🥐 베이커리</span>
-      <span class="stag" onclick="selectBiz(this,'헬스장')">💪 헬스장</span>
-      <span class="stag" onclick="selectBiz(this,'미용실')">💇 미용실</span>
-      <span class="stag" onclick="selectBiz(this,'편의점')">🏪 편의점</span>
-      <span class="stag" onclick="selectBiz(this,'술집')">🍺 술집</span>
-      <span class="stag" onclick="selectBiz(this,'중국집')">🥡 중국집</span>
-      <span class="stag" onclick="selectBiz(this,'노래방')">🎤 노래방</span>
-      <span class="stag" onclick="selectBiz(this,'PC방')">🖥️ PC방</span>
-      <span class="stag" onclick="selectBiz(this,'네일샵')">💅 네일샵</span>
+    <!-- 카테고리 칩 (1행) -->
+    <div class="search-tags" id="catRow">
+      <span class="ctag" data-cat="food"    style="--cat-clr:#e85d04" onclick="selectCat('food')"   >🍽️ 음식·외식</span>
+      <span class="ctag" data-cat="retail"  style="--cat-clr:#7c3aed" onclick="selectCat('retail')" >🛍️ 소매·유통</span>
+      <span class="ctag" data-cat="beauty"  style="--cat-clr:#db2777" onclick="selectCat('beauty')" >💄 뷰티·미용</span>
+      <span class="ctag" data-cat="health"  style="--cat-clr:#0284c7" onclick="selectCat('health')" >💪 건강·스포츠</span>
+      <span class="ctag" data-cat="edu"     style="--cat-clr:#16a34a" onclick="selectCat('edu')"    >📚 교육</span>
+      <span class="ctag" data-cat="leisure" style="--cat-clr:#d97706" onclick="selectCat('leisure')">🎮 여가·엔터</span>
+      <span class="ctag" data-cat="service" style="--cat-clr:#475569" onclick="selectCat('service')">🔧 생활서비스</span>
     </div>
-    <div class="search-tags" style="margin-top:6px;">
-      <span class="stag" onclick="selectArea(this,'강남역')">📍 강남역</span>
-      <span class="stag" onclick="selectArea(this,'홍대')">📍 홍대</span>
-      <span class="stag" onclick="selectArea(this,'성수동')">📍 성수동</span>
-      <span class="stag" onclick="selectArea(this,'신촌')">📍 신촌</span>
-      <span class="stag" onclick="selectArea(this,'건대입구')">📍 건대</span>
-      <span class="stag" onclick="selectArea(this,'종로')">📍 종로</span>
-      <span class="stag" onclick="selectArea(this,'부산 서면')">📍 부산 서면</span>
-      <span class="stag" onclick="selectArea(this,'대구 동성로')">📍 대구</span>
-      <span class="stag" onclick="selectArea(this,'인천 부평')">📍 인천</span>
-      <span class="stag" onclick="selectArea(this,'수원 팔달구')">📍 수원</span>
+    <!-- 세부 업종 칩 (카테고리 선택 시 표시) -->
+    <div class="search-tags sub-row" id="subRow" style="display:none;margin-top:8px;"></div>
+    <!-- 지역 칩 (2행 — 카테고리와 같은 너비 기준 7개) -->
+    <div class="search-tags" style="margin-top:6px;" id="areaRow">
+      <span class="stag area-tag" onclick="selectArea(this,'강남역')">📍 강남역</span>
+      <span class="stag area-tag" onclick="selectArea(this,'홍대')">📍 홍대</span>
+      <span class="stag area-tag" onclick="selectArea(this,'성수동')">📍 성수동</span>
+      <span class="stag area-tag" onclick="selectArea(this,'신촌')">📍 신촌</span>
+      <span class="stag area-tag" onclick="selectArea(this,'종로')">📍 종로</span>
+      <span class="stag area-tag" onclick="selectArea(this,'부산 서면')">📍 부산 서면</span>
+      <span class="stag area-tag" onclick="selectArea(this,'대구 동성로')">📍 대구</span>
     </div>
 
     <div class="trust-trio">
@@ -1694,8 +1695,29 @@ let selectedBiz=null,selectedArea='',selectedBizData=null,currentStep=0;
 
 function scrollToSearch(){document.getElementById('searchBox').scrollIntoView({behavior:'smooth',block:'center'})}
 function scrollToServices(){document.getElementById('servicesSection').scrollIntoView({behavior:'smooth',block:'start'})}
-function selectBiz(el,val){document.querySelectorAll('.stag').forEach(t=>t.classList.remove('active'));el.classList.add('active');document.getElementById('bizInput').value=val;selectedBiz=val}
-function selectArea(el,val){document.querySelectorAll('.stag').forEach(t=>t.classList.remove('active'));el.classList.add('active');document.getElementById('areaInput').value=val;selectedArea=val}
+// 카테고리별 세부 업종 데이터
+const CAT_SUBS = {
+  food:    [['☕','카페'],['🥩','고깃집'],['🍗','치킨집'],['🍱','한식당'],['🍜','분식집'],['🍺','술집·포차'],['🥡','중식당'],['🐟','일식당'],['🥐','베이커리'],['🫧','버블티카페']],
+  retail:  [['🏪','편의점'],['🛒','슈퍼마켓'],['👗','의류매장'],['✏️','문구·완구'],['💐','꽃집'],['📖','서점'],['👓','안경원']],
+  beauty:  [['💇','미용실'],['💅','네일샵'],['🧖','피부관리실'],['👁️','속눈썹샵'],['🪒','왁싱샵'],['🎨','타투샵']],
+  health:  [['🏋️','헬스장'],['🧘','필라테스'],['🌿','요가원'],['🥋','태권도장'],['🏊','수영장'],['💪','PT샵']],
+  edu:     [['📖','보습학원'],['🎵','음악학원'],['🎨','미술학원'],['🗣️','영어학원'],['💻','코딩학원'],['🧮','수학학원']],
+  leisure: [['🎤','노래방'],['🖥️','PC방'],['🎲','보드게임카페'],['🔐','방탈출카페'],['🎱','당구장'],['🎳','볼링장']],
+  service: [['👔','세탁소'],['🪡','수선집'],['🏠','인테리어'],['📷','사진관'],['🔧','수리점']]
+};
+function selectCat(catId) {
+  const subRow = document.getElementById('subRow');
+  const prev = document.querySelector('.ctag.active');
+  document.querySelectorAll('.ctag').forEach(t=>t.classList.remove('active'));
+  if (prev && prev.dataset.cat === catId) { subRow.style.display='none'; return; }
+  document.querySelector(`.ctag[data-cat="${catId}"]`).classList.add('active');
+  const subs = CAT_SUBS[catId] || [];
+  subRow.className = 'search-tags sub-row';
+  subRow.innerHTML = subs.map(([icon,name])=>`<span class="stag stag-sub" onclick="selectBiz(this,'${name}')">${icon} ${name}</span>`).join('');
+  subRow.style.display = 'flex';
+}
+function selectBiz(el,val){document.querySelectorAll('.stag-sub').forEach(t=>t.classList.remove('active'));el.classList.add('active');document.getElementById('bizInput').value=val;selectedBiz=val}
+function selectArea(el,val){document.querySelectorAll('.area-tag').forEach(t=>t.classList.remove('active'));el.classList.add('active');document.getElementById('areaInput').value=val;selectedArea=val}
 
 function calculateRiskScore(d){
   let w=d.locationScore*0.30+d.competitionScore*0.25+d.regulationScore*0.25+d.revenueScore*0.20;
