@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>창업지도 플랫폼 — AI 기반 창업 실행 지원</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=c455de3afef5b566b5fb09a4e2e038cd&libraries=services"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --navy:#1b2a4a;--navy-dark:#111d36;--navy-light:#243656;
+  --blue:#2563eb;--blue-light:#dbeafe;--blue-bg:#eff6ff;
+  --teal:#0d9488;--teal-light:#ccfbf1;
+  --red:#dc2626;--red-light:#fef2f2;
+  --orange:#ea580c;--orange-light:#fff7ed;
+  --green:#16a34a;--green-light:#f0fdf4;
+  --yellow:#ca8a04;--yellow-light:#fefce8;
+  --bg:#f1f5f9;--surface:#fff;--surface2:#f8fafc;
+  --border:#e2e8f0;--border2:#cbd5e1;
+  --text:#1e293b;--text2:#334155;--muted:#64748b;--light:#94a3b8;
+  --r:8px;--r-lg:12px;
+  --shadow:0 1px 3px rgba(0,0,0,.06);--shadow-md:0 4px 12px rgba(0,0,0,.08);--shadow-lg:0 10px 30px rgba(0,0,0,.1);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Noto Sans KR',-apple-system,sans-serif;font-size:14px;line-height:1.6;color:var(--text);background:var(--navy-dark);-webkit-font-smoothing:antialiased}
+
+/* NAV */
+.nav{background:var(--navy);height:52px;display:flex;align-items:center;padding:0 20px;gap:16px;border-bottom:1px solid rgba(255,255,255,.08);position:relative;z-index:200;flex-shrink:0}
+.nav-logo{display:flex;align-items:center;gap:8px;text-decoration:none}
+.nav-logo-icon{width:28px;height:28px;background:linear-gradient(135deg,var(--teal),var(--blue));border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.nav-logo-text{font-size:15px;font-weight:700;color:#fff}
+.nav-badge{font-size:10px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);padding:2px 8px;border-radius:20px;font-weight:500}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.nav-link{color:rgba(255,255,255,.65);font-size:13px;text-decoration:none;padding:4px 10px;border-radius:6px;transition:all .15s}
+.nav-link:hover{color:#fff;background:rgba(255,255,255,.08)}
+.nav-btn{background:var(--blue);color:#fff;border:none;padding:6px 14px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.nav-btn:hover{background:#1d4ed8}
+
+/* ===== LANDING ===== */
+#landing{height:calc(100vh - 52px);overflow-y:auto;background:linear-gradient(160deg,var(--navy-dark) 0%,#0f1f38 40%,#0d1a30 100%)}
+.land-hero{text-align:center;padding:48px 20px 32px}
+.land-tag{display:inline-flex;align-items:center;gap:6px;background:rgba(45,212,191,.12);border:1px solid rgba(45,212,191,.25);color:#2dd4bf;font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;margin-bottom:18px;letter-spacing:.04em}
+.land-tag::before{content:'';width:6px;height:6px;background:#2dd4bf;border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.land-title{font-size:clamp(24px,4vw,38px);font-weight:800;color:#fff;line-height:1.25;margin-bottom:12px}
+.land-title span{background:linear-gradient(135deg,#38bdf8,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.land-sub{font-size:15px;color:rgba(255,255,255,.55);max-width:500px;margin:0 auto 36px}
+
+/* STEP INDICATOR */
+.land-steps{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:32px}
+.step-item{display:flex;align-items:center;gap:8px}
+.step-num{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.step-num.active{background:var(--blue);color:#fff}
+.step-num.done{background:var(--teal);color:#fff}
+.step-num.inactive{background:rgba(255,255,255,.12);color:rgba(255,255,255,.4)}
+.step-label{font-size:12px;font-weight:600}
+.step-label.active{color:#fff}
+.step-label.done{color:var(--teal)}
+.step-label.inactive{color:rgba(255,255,255,.35)}
+.step-line{width:40px;height:1px;background:rgba(255,255,255,.12);margin:0 8px}
+
+/* CATEGORY TABS */
+.cat-scroll{overflow-x:auto;padding:0 20px 2px;margin-bottom:20px;-webkit-overflow-scrolling:touch}
+.cat-scroll::-webkit-scrollbar{height:3px}
+.cat-scroll::-webkit-scrollbar-track{background:transparent}
+.cat-scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px}
+.cat-tabs{display:flex;gap:8px;min-width:max-content;margin:0 auto;justify-content:center}
+.cat-tab{display:flex;align-items:center;gap:6px;padding:8px 16px;border-radius:24px;border:1.5px solid rgba(255,255,255,.12);background:rgba(255,255,255,.05);color:rgba(255,255,255,.6);font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap;font-family:inherit}
+.cat-tab:hover{border-color:rgba(255,255,255,.25);color:#fff;background:rgba(255,255,255,.08)}
+.cat-tab.active{color:#fff;border-color:transparent}
+
+/* BIZ GRID */
+.biz-section{max-width:960px;margin:0 auto;padding:0 20px}
+.biz-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px;max-height:280px;overflow-y:auto;padding:4px 2px;margin-bottom:20px}
+.biz-grid::-webkit-scrollbar{width:4px}
+.biz-grid::-webkit-scrollbar-track{background:transparent}
+.biz-grid::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px}
+.biz-card{display:flex;flex-direction:column;align-items:center;gap:6px;padding:14px 8px;background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.08);border-radius:var(--r-lg);cursor:pointer;transition:all .2s;text-align:center}
+.biz-card:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.2);transform:translateY(-2px)}
+.biz-card.selected{border-color:var(--teal);background:rgba(13,148,136,.15);box-shadow:0 0 0 2px rgba(13,148,136,.3)}
+.biz-card-icon{font-size:24px;line-height:1}
+.biz-card-name{font-size:11px;font-weight:600;color:rgba(255,255,255,.8);line-height:1.3}
+.biz-card.selected .biz-card-name{color:#2dd4bf}
+.biz-count{font-size:11px;color:rgba(255,255,255,.3);margin-bottom:4px;text-align:center}
+
+/* AREA SEARCH */
+.area-box{background:rgba(255,255,255,.06);border:1.5px solid rgba(255,255,255,.1);border-radius:var(--r-lg);padding:20px;max-width:540px;margin:0 auto 20px}
+.area-label{font-size:12px;font-weight:700;color:rgba(255,255,255,.5);letter-spacing:.06em;margin-bottom:10px;text-transform:uppercase}
+.area-input-row{display:flex;gap:8px}
+.area-input{flex:1;background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.12);border-radius:var(--r);padding:10px 14px;color:#fff;font-size:14px;font-family:inherit;outline:none;transition:all .2s}
+.area-input::placeholder{color:rgba(255,255,255,.3)}
+.area-input:focus{border-color:var(--teal);background:rgba(255,255,255,.1)}
+.area-search-btn{background:var(--teal);color:#fff;border:none;padding:10px 18px;border-radius:var(--r);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;white-space:nowrap;transition:all .15s}
+.area-search-btn:hover{background:#0f766e}
+
+/* START BUTTON */
+.start-wrap{text-align:center;padding-bottom:40px}
+.start-btn{background:linear-gradient(135deg,var(--blue),#7c3aed);color:#fff;border:none;padding:14px 48px;border-radius:30px;font-size:16px;font-weight:800;cursor:pointer;font-family:inherit;transition:all .2s;box-shadow:0 4px 20px rgba(37,99,235,.4)}
+.start-btn:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(37,99,235,.5)}
+.start-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.sel-status{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.sel-chip{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:20px;padding:5px 12px;font-size:12px;color:rgba(255,255,255,.7)}
+.sel-chip.active{background:rgba(13,148,136,.2);border-color:var(--teal);color:#2dd4bf}
+.sel-chip-x{cursor:pointer;opacity:.6;margin-left:2px}
+.sel-chip-x:hover{opacity:1}
+
+/* ===== DASHBOARD ===== */
+#dashboard{display:none;height:calc(100vh - 52px);flex-direction:column}
+.dash-header{background:var(--navy);border-bottom:1px solid rgba(255,255,255,.08);padding:8px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.dash-biz-badge{display:flex;align-items:center;gap:6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:4px 10px;font-size:13px;font-weight:700;color:#fff}
+.dash-area-badge{font-size:12px;color:rgba(255,255,255,.55);display:flex;align-items:center;gap:4px}
+.dash-back{margin-left:auto;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.7);padding:5px 12px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.dash-back:hover{background:rgba(255,255,255,.14);color:#fff}
+.dash-body{display:flex;flex:1;overflow:hidden}
+
+/* MAP PANEL */
+#mapPanel{flex:0 0 60%;position:relative;background:#1a2535}
+#platformMap{width:100%;height:100%}
+.map-overlay{position:absolute;top:12px;left:12px;display:flex;flex-direction:column;gap:8px;z-index:10}
+.map-ctrl-group{background:rgba(17,29,54,.88);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);border-radius:var(--r);padding:6px;display:flex;gap:4px}
+.map-ctrl-btn{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.75);padding:5px 10px;border-radius:5px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;white-space:nowrap}
+.map-ctrl-btn:hover{background:rgba(255,255,255,.15);color:#fff}
+.map-ctrl-btn.active{background:var(--teal);border-color:var(--teal);color:#fff}
+.map-nearby-badge{position:absolute;bottom:16px;left:12px;background:rgba(17,29,54,.92);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.1);border-radius:var(--r);padding:8px 14px;font-size:12px;color:rgba(255,255,255,.8);max-width:280px}
+
+/* ANALYSIS PANEL */
+#analysisPanel{flex:1;display:flex;flex-direction:column;background:var(--surface2);overflow:hidden}
+.tab-nav{display:flex;background:var(--surface);border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto}
+.tab-nav::-webkit-scrollbar{display:none}
+.tab-btn{flex:1;min-width:72px;padding:10px 4px;border:none;background:transparent;font-size:11px;font-weight:700;color:var(--muted);cursor:pointer;font-family:inherit;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+.tab-btn:hover{color:var(--text);background:var(--surface2)}
+.tab-btn.active{color:var(--blue);border-bottom-color:var(--blue);background:var(--surface)}
+.tab-content{display:none;flex:1;overflow-y:auto;padding:16px}
+.tab-content.active{display:block}
+.tab-content::-webkit-scrollbar{width:4px}
+.tab-content::-webkit-scrollbar-track{background:transparent}
+.tab-content::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* SECTION CARDS */
+.sec-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:14px;margin-bottom:12px}
+.sec-title{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.score-ring{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.score-circle{width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:20px;font-weight:800;flex-shrink:0}
+.score-circle.green{background:var(--green-light);color:var(--green)}
+.score-circle.yellow{background:var(--yellow-light);color:var(--yellow)}
+.score-circle.red{background:var(--red-light);color:var(--red)}
+.score-meta{flex:1}
+.score-grade{font-size:16px;font-weight:800;color:var(--text)}
+.score-desc{font-size:11px;color:var(--muted);margin-top:2px}
+.stat-row{display:flex;gap:8px;margin-bottom:8px}
+.stat-box{flex:1;background:var(--surface2);border-radius:var(--r);padding:10px;text-align:center}
+.stat-val{font-size:16px;font-weight:800;color:var(--text)}
+.stat-label{font-size:10px;color:var(--muted);margin-top:2px}
+.chart-wrap{position:relative;height:140px;margin-bottom:4px}
+.risk-item{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-top:1px solid var(--border)}
+.risk-item:first-child{border-top:none;padding-top:0}
+.risk-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.risk-body{flex:1}
+.risk-title{font-size:12px;font-weight:700;color:var(--text);margin-bottom:2px}
+.risk-desc{font-size:11px;color:var(--muted);line-height:1.5}
+
+/* PROFIT TAB */
+.profit-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.input-group{display:flex;flex-direction:column;gap:4px}
+.input-label{font-size:11px;font-weight:600;color:var(--muted)}
+.input-field{border:1.5px solid var(--border);border-radius:var(--r);padding:8px 10px;font-size:13px;font-weight:600;color:var(--text);font-family:inherit;outline:none;transition:all .15s;background:var(--surface)}
+.input-field:focus{border-color:var(--blue)}
+.input-unit{font-size:11px;color:var(--muted);margin-top:2px}
+.autofill-btn{background:var(--blue-bg);color:var(--blue);border:1px solid var(--blue-light);border-radius:var(--r);padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;width:100%;margin-bottom:10px;transition:all .15s}
+.autofill-btn:hover{background:var(--blue-light)}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.result-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-lg);padding:12px;text-align:center}
+.result-val{font-size:18px;font-weight:800;color:var(--text)}
+.result-label{font-size:10px;color:var(--muted);margin-top:3px}
+.result-box.highlight{background:linear-gradient(135deg,var(--blue-bg),#f0fdf4);border-color:var(--blue-light)}
+.result-box.highlight .result-val{color:var(--blue)}
+.risk-bar-wrap{margin-bottom:12px}
+.risk-bar-label{display:flex;justify-content:space-between;font-size:11px;font-weight:600;margin-bottom:4px}
+.risk-bar-track{height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.risk-bar-fill{height:100%;border-radius:4px;transition:width .6s ease}
+.risk-score-total{text-align:center;padding:12px;background:var(--surface2);border-radius:var(--r-lg);margin-top:8px}
+.risk-score-val{font-size:28px;font-weight:800}
+.risk-score-val.green{color:var(--green)}
+.risk-score-val.yellow{color:var(--yellow)}
+.risk-score-val.red{color:var(--red)}
+.risk-score-label{font-size:12px;color:var(--muted)}
+
+/* AI TAB */
+.ai-summary{background:linear-gradient(135deg,#f0f9ff,#f0fdf4);border:1px solid #bae6fd;border-radius:var(--r-lg);padding:16px;font-size:13px;line-height:1.7;color:var(--text2)}
+.ai-summary h3{font-size:14px;font-weight:800;color:var(--navy);margin:12px 0 6px}
+.ai-summary h3:first-child{margin-top:0}
+.ai-summary ul{padding-left:16px;margin:4px 0}
+.ai-summary li{margin-bottom:4px}
+.ai-btn{background:linear-gradient(135deg,var(--blue),#7c3aed);color:#fff;border:none;padding:10px 20px;border-radius:var(--r);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;width:100%;margin-bottom:12px;transition:all .15s}
+.ai-btn:hover{opacity:.9}
+.ai-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(124,58,237,.1);color:#7c3aed;border:1px solid rgba(124,58,237,.2);border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;margin-bottom:10px}
+
+/* ADMIN TAB */
+.flow-step{display:flex;gap:12px;padding:10px 0;border-top:1px solid var(--border)}
+.flow-step:first-child{border-top:none;padding-top:0}
+.flow-num{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;margin-top:2px}
+.flow-num.done{background:var(--teal-light);color:var(--teal)}
+.flow-num.todo{background:var(--blue-bg);color:var(--blue)}
+.flow-num.warn{background:var(--yellow-light);color:var(--yellow)}
+.flow-body{flex:1}
+.flow-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:3px}
+.flow-desc{font-size:11px;color:var(--muted);line-height:1.5}
+.flow-law{font-size:10px;color:var(--blue);margin-top:4px;font-weight:600}
+.permit-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.permit-item{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r);padding:8px 6px;text-align:center;font-size:10px}
+.permit-icon{font-size:16px;margin-bottom:3px}
+.permit-status{font-size:10px;font-weight:700}
+.permit-status.pass{color:var(--green)}
+.permit-status.warn{color:var(--yellow)}
+.permit-status.fail{color:var(--red)}
+
+/* BROKER TAB */
+.broker-card{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--border)}
+.broker-card:first-child{border-top:none;padding-top:0}
+.broker-icon{width:36px;height:36px;background:var(--blue-bg);border-radius:var(--r);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.broker-body{flex:1}
+.broker-name{font-size:13px;font-weight:700;color:var(--text)}
+.broker-addr{font-size:11px;color:var(--muted)}
+.broker-dist{font-size:10px;color:var(--blue);font-weight:600;margin-top:1px}
+.broker-tel{background:var(--green-light);color:var(--green);border:1px solid #bbf7d0;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;text-decoration:none;white-space:nowrap}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--navy);color:#fff;padding:10px 20px;border-radius:30px;font-size:13px;font-weight:600;z-index:9999;opacity:0;transition:all .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* LOADING */
+.loading-spin{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .8s linear infinite;margin:20px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-state{text-align:center;padding:32px 16px;color:var(--muted)}
+.empty-state .empty-icon{font-size:32px;margin-bottom:8px}
+
+/* CUSTOM MAP OVERLAYS */
+.comp-marker{background:rgba(220,38,38,.9);color:#fff;border-radius:6px;padding:3px 7px;font-size:11px;font-weight:700;white-space:nowrap;cursor:pointer;box-shadow:0 2px 6px rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.3)}
+.comp-marker:hover{background:#b91c1c}
+.poi-marker{background:rgba(17,29,54,.9);color:#fff;border-radius:6px;padding:3px 7px;font-size:11px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <a href="index.html" class="nav-logo">
+    <div class="nav-logo-icon">🗺</div>
+    <span class="nav-logo-text">창업지도</span>
+  </a>
+  <span class="nav-badge">AI 플랫폼 BETA</span>
+  <div class="nav-right">
+    <a href="index.html" class="nav-link">← 기존 도구</a>
+    <button class="nav-btn" onclick="showToast('로그인 기능 준비 중입니다')">로그인</button>
+  </div>
+</nav>
+
+<!-- LANDING -->
+<section id="landing">
+  <div class="land-hero">
+    <div class="land-tag">🤖 AI 기반 창업 실행 지원 플랫폼</div>
+    <h1 class="land-title">업종 선택부터 <span>수익 계산</span>까지<br>한 화면에서 끝내세요</h1>
+    <p class="land-sub">상권 분석 · 수익성 계산 · AI 요약 · 행정 가이드 · 중개사 연결</p>
+    <div class="land-steps">
+      <div class="step-item"><div class="step-num active" id="s1">1</div><span class="step-label active">업종 선택</span></div>
+      <div class="step-line"></div>
+      <div class="step-item"><div class="step-num inactive" id="s2">2</div><span class="step-label inactive">지역 입력</span></div>
+      <div class="step-line"></div>
+      <div class="step-item"><div class="step-num inactive" id="s3">3</div><span class="step-label inactive">분석 시작</span></div>
+    </div>
+  </div>
+
+  <!-- CATEGORY TABS -->
+  <div class="cat-scroll">
+    <div class="cat-tabs" id="catTabs"></div>
+  </div>
+
+  <!-- BIZ GRID -->
+  <div class="biz-section">
+    <div class="biz-count" id="bizCount"></div>
+    <div class="biz-grid" id="bizGrid"></div>
+
+    <!-- AREA SEARCH -->
+    <div class="area-box">
+      <div class="area-label">📍 Step 2 · 창업 희망 지역</div>
+      <div class="area-input-row">
+        <input type="text" class="area-input" id="areaInput" placeholder="예: 강남구 역삼동, 홍대입구역 인근" oninput="onAreaInput()" onkeydown="if(event.key==='Enter')searchArea()">
+        <button class="area-search-btn" onclick="searchArea()">지도 확인</button>
+      </div>
+    </div>
+
+    <!-- STATUS + START -->
+    <div class="sel-status" id="selStatus">
+      <div class="sel-chip" id="chipBiz">🏪 업종을 선택해주세요</div>
+      <div class="sel-chip" id="chipArea">📍 지역을 입력해주세요</div>
+    </div>
+    <div class="start-wrap">
+      <button class="start-btn" id="startBtn" onclick="startAnalysis()" disabled>분석 시작하기 →</button>
+    </div>
+  </div>
+</section>
+
+<!-- DASHBOARD -->
+<div id="dashboard" style="display:none;height:calc(100vh - 52px);flex-direction:column">
+  <div class="dash-header">
+    <div class="dash-biz-badge" id="dashBiz">☕ 카페</div>
+    <div class="dash-area-badge">📍 <span id="dashArea">강남구</span></div>
+    <button class="dash-back" onclick="backToLanding()">← 재선택</button>
+  </div>
+  <div class="dash-body">
+    <!-- MAP -->
+    <div id="mapPanel">
+      <div id="platformMap"></div>
+      <div class="map-overlay">
+        <div class="map-ctrl-group">
+          <button class="map-ctrl-btn" id="r500" onclick="toggleRadius(500)">500m</button>
+          <button class="map-ctrl-btn" id="r1000" onclick="toggleRadius(1000)">1km</button>
+          <button class="map-ctrl-btn" id="r1500" onclick="toggleRadius(1500)">1.5km</button>
+        </div>
+        <div class="map-ctrl-group">
+          <button class="map-ctrl-btn" id="poi-subway" onclick="togglePOI('subway')">🚇</button>
+          <button class="map-ctrl-btn" id="poi-school" onclick="togglePOI('school')">🏫</button>
+          <button class="map-ctrl-btn" id="poi-gov" onclick="togglePOI('gov')">🏛️</button>
+          <button class="map-ctrl-btn" id="poi-comp" onclick="togglePOI('comp')">🏪</button>
+        </div>
+      </div>
+      <div class="map-nearby-badge" id="nearbyBadge" style="display:none"></div>
+    </div>
+
+    <!-- ANALYSIS PANEL -->
+    <div id="analysisPanel">
+      <div class="tab-nav">
+        <button class="tab-btn active" onclick="switchTab('market')">📊 상권분석</button>
+        <button class="tab-btn" onclick="switchTab('profit')">💰 수익분석</button>
+        <button class="tab-btn" onclick="switchTab('ai')">🤖 AI요약</button>
+        <button class="tab-btn" onclick="switchTab('admin')">📋 행정가이드</button>
+        <button class="tab-btn" onclick="switchTab('broker')">🏢 중개사</button>
+      </div>
+      <div id="tab-market" class="tab-content active"></div>
+      <div id="tab-profit" class="tab-content"></div>
+      <div id="tab-ai" class="tab-content"></div>
+      <div id="tab-admin" class="tab-content"></div>
+      <div id="tab-broker" class="tab-content"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const CATEGORIES = [
+  { id:'all',     label:'전체',       icon:'🔍', color:'#64748b' },
+  { id:'food',    label:'음식·외식',  icon:'🍽️', color:'#e85d04' },
+  { id:'retail',  label:'소매·유통',  icon:'🛍️', color:'#7c3aed' },
+  { id:'beauty',  label:'뷰티·미용',  icon:'💄', color:'#db2777' },
+  { id:'health',  label:'건강·스포츠',icon:'💪', color:'#0284c7' },
+  { id:'edu',     label:'교육',       icon:'📚', color:'#16a34a' },
+  { id:'leisure', label:'여가·엔터',  icon:'🎮', color:'#f59e0b' },
+  { id:'service', label:'생활서비스', icon:'🔧', color:'#475569' },
+];
+
+// vc=변동비율, pc=인테리어비(만원/평), lb=인건비기본, rb=월매출중간값, rp=비관, ro=낙관
+// cm=최소창업비용, bp=기준평수, bm=BEP월, mc=월고정비, pk=피크시간, kw=카카오검색어
+const BIZ = {
+  // ── 음식·외식 ──────────────────────────────
+  '카페':      {cat:'food',   icon:'☕', nm:'카페·커피숍',     kw:'카페',     vc:.35,pc:200,lb:250,rb:520, rp:280,ro:840, cm:3500, bp:15,bm:8, mc:350,pk:[8,9,12,13,15,16]},
+  '고깃집':    {cat:'food',   icon:'🥩', nm:'고깃집·구이집',   kw:'고깃집',   vc:.45,pc:250,lb:400,rb:850, rp:450,ro:1400,cm:6500, bp:30,bm:10,mc:600,pk:[18,19,20,21]},
+  '치킨집':    {cat:'food',   icon:'🍗', nm:'치킨집',          kw:'치킨',     vc:.42,pc:180,lb:200,rb:650, rp:350,ro:1050,cm:4500, bp:18,bm:9, mc:420,pk:[18,19,20,21,22]},
+  '중국집':    {cat:'food',   icon:'🥡', nm:'중국집·중식당',   kw:'중국집',   vc:.42,pc:180,lb:250,rb:600, rp:320,ro:950, cm:3500, bp:25,bm:8, mc:380,pk:[11,12,13,18,19]},
+  '분식집':    {cat:'food',   icon:'🍜', nm:'분식집·김밥집',   kw:'분식',     vc:.40,pc:150,lb:150,rb:420, rp:220,ro:680, cm:2000, bp:15,bm:6, mc:220,pk:[11,12,13,17,18]},
+  '베이커리':  {cat:'food',   icon:'🥐', nm:'베이커리·제과점', kw:'베이커리', vc:.38,pc:220,lb:230,rb:580, rp:300,ro:920, cm:5000, bp:20,bm:10,mc:380,pk:[7,8,9,12,13]},
+  '술집':      {cat:'food',   icon:'🍺', nm:'술집·호프·포차',  kw:'술집',     vc:.35,pc:200,lb:280,rb:700, rp:350,ro:1200,cm:4000, bp:30,bm:9, mc:480,pk:[18,19,20,21,22,23]},
+  '일식':      {cat:'food',   icon:'🍱', nm:'일식·초밥집',     kw:'일식당',   vc:.40,pc:220,lb:300,rb:700, rp:380,ro:1100,cm:5500, bp:25,bm:10,mc:480,pk:[12,13,18,19,20]},
+  '피자양식':  {cat:'food',   icon:'🍕', nm:'피자·양식당',     kw:'피자',     vc:.38,pc:180,lb:250,rb:560, rp:300,ro:900, cm:4000, bp:20,bm:9, mc:380,pk:[12,13,18,19,20]},
+  '포차':      {cat:'food',   icon:'🏮', nm:'포장마차·포차',   kw:'포차',     vc:.35,pc:80, lb:100,rb:380, rp:180,ro:650, cm:1000, bp:8, bm:5, mc:200,pk:[17,18,19,20,21,22,23]},
+  '횟집':      {cat:'food',   icon:'🐟', nm:'횟집·해산물',     kw:'횟집',     vc:.50,pc:280,lb:400,rb:900, rp:500,ro:1500,cm:8000, bp:40,bm:12,mc:700,pk:[12,13,18,19,20,21]},
+  '버거':      {cat:'food',   icon:'🍔', nm:'버거·패스트푸드', kw:'버거',     vc:.40,pc:160,lb:200,rb:480, rp:250,ro:800, cm:3000, bp:15,bm:8, mc:320,pk:[11,12,13,17,18,19]},
+  '쌀국수':    {cat:'food',   icon:'🍛', nm:'쌀국수·아시안',   kw:'쌀국수',   vc:.38,pc:160,lb:200,rb:480, rp:250,ro:780, cm:3000, bp:18,bm:8, mc:320,pk:[11,12,13,18,19]},
+  '한정식':    {cat:'food',   icon:'🍚', nm:'한정식·정식집',   kw:'한정식',   vc:.40,pc:200,lb:350,rb:800, rp:450,ro:1300,cm:6000, bp:35,bm:11,mc:600,pk:[12,13,18,19,20]},
+  // ── 소매·유통 ──────────────────────────────
+  '편의점':    {cat:'retail', icon:'🏪', nm:'편의점',          kw:'편의점',   vc:.65,pc:150,lb:180,rb:320, rp:180,ro:480, cm:3500, bp:20,bm:12,mc:250,pk:[7,8,12,13,18,19,22,23]},
+  '슈퍼마켓':  {cat:'retail', icon:'🛒', nm:'슈퍼마켓·마트',  kw:'슈퍼',     vc:.70,pc:120,lb:280,rb:900, rp:550,ro:1500,cm:6000, bp:60,bm:14,mc:600,pk:[9,10,11,16,17,18]},
+  '의류점':    {cat:'retail', icon:'👗', nm:'의류점·옷가게',   kw:'옷가게',   vc:.50,pc:180,lb:180,rb:500, rp:250,ro:850, cm:4000, bp:25,bm:10,mc:320,pk:[12,13,14,15,16,17]},
+  '약국':      {cat:'retail', icon:'💊', nm:'약국·드럭스토어', kw:'약국',     vc:.55,pc:200,lb:350,rb:800, rp:450,ro:1200,cm:8000, bp:25,bm:10,mc:550,pk:[9,10,11,14,15,16]},
+  '화장품':    {cat:'retail', icon:'🧴', nm:'화장품샵',        kw:'화장품',   vc:.45,pc:200,lb:200,rb:480, rp:250,ro:800, cm:4000, bp:20,bm:10,mc:320,pk:[12,13,14,15,16,17]},
+  '꽃집':      {cat:'retail', icon:'💐', nm:'꽃집·플라워샵',  kw:'꽃집',     vc:.55,pc:100,lb:150,rb:320, rp:150,ro:550, cm:2000, bp:12,bm:8, mc:200,pk:[9,10,14,15]},
+  '안경점':    {cat:'retail', icon:'👓', nm:'안경점·렌즈샵',  kw:'안경점',   vc:.40,pc:180,lb:200,rb:600, rp:300,ro:1000,cm:5000, bp:20,bm:9, mc:380,pk:[12,13,14,15,16,17]},
+  '문구잡화':  {cat:'retail', icon:'✏️', nm:'문구·잡화점',    kw:'문구점',   vc:.60,pc:100,lb:150,rb:280, rp:150,ro:450, cm:2000, bp:15,bm:10,mc:200,pk:[13,14,15,16,17]},
+  // ── 뷰티·미용 ──────────────────────────────
+  '미용실':    {cat:'beauty', icon:'💇', nm:'미용실·헤어샵',  kw:'미용실',   vc:.30,pc:180,lb:250,rb:520, rp:280,ro:850, cm:3000, bp:20,bm:8, mc:320,pk:[11,12,14,15,16]},
+  '네일샵':    {cat:'beauty', icon:'💅', nm:'네일샵',          kw:'네일샵',   vc:.25,pc:160,lb:200,rb:480, rp:260,ro:760, cm:2000, bp:15,bm:7, mc:280,pk:[13,14,15,16,17]},
+  '피부관리':  {cat:'beauty', icon:'✨', nm:'피부관리실',      kw:'피부관리', vc:.25,pc:200,lb:250,rb:600, rp:300,ro:1000,cm:5000, bp:20,bm:10,mc:400,pk:[11,12,14,15,16]},
+  '왁싱':      {cat:'beauty', icon:'🌸', nm:'왁싱샵',          kw:'왁싱',     vc:.20,pc:150,lb:180,rb:400, rp:200,ro:650, cm:2500, bp:10,bm:7, mc:260,pk:[12,13,14,15,16]},
+  '눈썹':      {cat:'beauty', icon:'👁️', nm:'눈썹·속눈썹샵', kw:'눈썹',     vc:.15,pc:130,lb:150,rb:350, rp:180,ro:580, cm:1500, bp:8, bm:6, mc:220,pk:[12,13,14,15,16]},
+  '타투':      {cat:'beauty', icon:'🎨', nm:'타투·반영구',     kw:'타투',     vc:.15,pc:150,lb:150,rb:450, rp:220,ro:750, cm:2000, bp:10,bm:7, mc:250,pk:[13,14,15,16,17]},
+  // ── 건강·스포츠 ────────────────────────────
+  '헬스장':    {cat:'health', icon:'🏋️', nm:'헬스장·피트니스',kw:'헬스장',   vc:.15,pc:180,lb:350,rb:800, rp:400,ro:1400,cm:8000, bp:80,bm:14,mc:700,pk:[6,7,18,19,20]},
+  '필라테스':  {cat:'health', icon:'🤸', nm:'필라테스',        kw:'필라테스', vc:.15,pc:220,lb:280,rb:700, rp:350,ro:1200,cm:6000, bp:40,bm:10,mc:550,pk:[7,8,10,11,19,20]},
+  '요가원':    {cat:'health', icon:'🧘', nm:'요가원',          kw:'요가',     vc:.12,pc:180,lb:250,rb:600, rp:300,ro:1000,cm:4500, bp:30,bm:9, mc:450,pk:[7,8,10,11,19,20]},
+  '골프연습장':{cat:'health', icon:'⛳', nm:'골프연습장',      kw:'골프연습장',vc:.10,pc:250,lb:300,rb:1000,rp:550,ro:1800,cm:12000,bp:100,bm:16,mc:750,pk:[8,9,10,16,17,18]},
+  '무도장':    {cat:'health', icon:'🥋', nm:'태권도·무도장',   kw:'태권도',   vc:.12,pc:150,lb:200,rb:500, rp:250,ro:850, cm:3500, bp:50,bm:9, mc:380,pk:[16,17,18,19,20]},
+  '클라이밍':  {cat:'health', icon:'🧗', nm:'클라이밍·볼더링',kw:'클라이밍', vc:.12,pc:300,lb:250,rb:650, rp:350,ro:1100,cm:8000, bp:80,bm:13,mc:500,pk:[18,19,20,21]},
+  // ── 교육 ───────────────────────────────────
+  '보습학원':  {cat:'edu',    icon:'📖', nm:'보습·입시학원',   kw:'학원',     vc:.15,pc:120,lb:400,rb:900, rp:500,ro:1500,cm:5000, bp:60,bm:8, mc:700,pk:[15,16,17,18,19,20]},
+  '영어학원':  {cat:'edu',    icon:'🔤', nm:'영어학원',        kw:'영어학원', vc:.15,pc:130,lb:450,rb:1000,rp:550,ro:1800,cm:6000, bp:50,bm:8, mc:750,pk:[15,16,17,18,19,20]},
+  '음악학원':  {cat:'edu',    icon:'🎹', nm:'피아노·음악학원', kw:'음악학원', vc:.10,pc:200,lb:300,rb:600, rp:300,ro:1000,cm:4000, bp:40,bm:9, mc:500,pk:[15,16,17,18,19,20]},
+  '미술학원':  {cat:'edu',    icon:'🖌️', nm:'미술학원',        kw:'미술학원', vc:.15,pc:150,lb:280,rb:550, rp:280,ro:900, cm:3500, bp:40,bm:8, mc:450,pk:[15,16,17,18,19]},
+  '어린이집':  {cat:'edu',    icon:'🧒', nm:'어린이집·유치원', kw:'어린이집', vc:.20,pc:200,lb:600,rb:1200,rp:800,ro:1800,cm:10000,bp:80,bm:12,mc:1000,pk:[8,9,16,17]},
+  '수학학원':  {cat:'edu',    icon:'🔢', nm:'수학학원',        kw:'수학학원', vc:.15,pc:120,lb:350,rb:800, rp:450,ro:1400,cm:4500, bp:50,bm:8, mc:650,pk:[15,16,17,18,19,20]},
+  // ── 여가·엔터 ──────────────────────────────
+  '노래방':    {cat:'leisure',icon:'🎤', nm:'노래방·코인노래방',kw:'노래방',  vc:.20,pc:200,lb:300,rb:520, rp:280,ro:820, cm:6000, bp:50,bm:12,mc:500,pk:[19,20,21,22,23]},
+  'PC방':      {cat:'leisure',icon:'🖥️', nm:'PC방',            kw:'PC방',    vc:.25,pc:200,lb:200,rb:480, rp:250,ro:780, cm:8000, bp:60,bm:14,mc:520,pk:[14,15,16,17,18,19,20,21,22]},
+  '당구장':    {cat:'leisure',icon:'🎱', nm:'당구장·포켓볼',   kw:'당구장',  vc:.10,pc:150,lb:200,rb:400, rp:200,ro:650, cm:3000, bp:60,bm:10,mc:300,pk:[14,15,16,17,18,19,20,21]},
+  '스크린골프':{cat:'leisure',icon:'🏌️', nm:'스크린골프',      kw:'스크린골프',vc:.12,pc:250,lb:200,rb:700,rp:380,ro:1200,cm:7000, bp:60,bm:12,mc:500,pk:[7,8,17,18,19,20,21]},
+  '방탈출':    {cat:'leisure',icon:'🔐', nm:'방탈출·테마카페', kw:'방탈출',  vc:.20,pc:300,lb:200,rb:600, rp:300,ro:1000,cm:5000, bp:40,bm:10,mc:400,pk:[14,15,16,17,18,19,20,21]},
+  '보드게임':  {cat:'leisure',icon:'🎲', nm:'보드게임카페',    kw:'보드게임카페',vc:.20,pc:200,lb:150,rb:420,rp:200,ro:700, cm:3000, bp:40,bm:9, mc:300,pk:[14,15,16,17,18,19,20,21]},
+  // ── 생활서비스 ─────────────────────────────
+  '세탁소':    {cat:'service',icon:'👔', nm:'세탁소·코인빨래방',kw:'세탁소',  vc:.35,pc:100,lb:200,rb:350, rp:180,ro:600, cm:3000, bp:20,bm:10,mc:280,pk:[9,10,11,16,17,18]},
+  '반려동물':  {cat:'service',icon:'🐾', nm:'반려동물샵·미용', kw:'동물병원', vc:.40,pc:180,lb:200,rb:480, rp:250,ro:800, cm:3500, bp:20,bm:9, mc:340,pk:[11,12,13,14,15,16,17]},
+  '인테리어':  {cat:'service',icon:'🔨', nm:'인테리어·수선점', kw:'인테리어', vc:.45,pc:100,lb:300,rb:600, rp:300,ro:1000,cm:3000, bp:30,bm:8, mc:450,pk:[9,10,11,14,15,16]},
+  '자동차':    {cat:'service',icon:'🚗', nm:'자동차용품·세차',  kw:'자동차세차',vc:.40,pc:120,lb:200,rb:500,rp:280,ro:850, cm:4000, bp:40,bm:9, mc:360,pk:[10,11,14,15,16,17]},
+};
+
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  biz: null, bizKey: null, area: '', coords: null,
+  activeCat: 'all', rendered: {}, activeTab: 'market',
+  radiusCircles: {}, radiusActive: new Set(),
+  poiMarkers: {}, poiActive: new Set(),
+  compMarkers: [], compInfoWins: [],
+  kakaoMap: null, mapCenterMarker: null,
+  hourChart: null, dayChart: null,
+  geocoder: null,
+};
+
+// ============================================================
+// LANDING INIT
+// ============================================================
+function initLanding() {
+  renderCatTabs();
+  renderBizGrid('all');
+}
+
+function renderCatTabs() {
+  const el = document.getElementById('catTabs');
+  el.innerHTML = CATEGORIES.map(c => `
+    <button class="cat-tab ${c.id==='all'?'active':''}"
+      style="${c.id==='all'?'background:'+c.color+';border-color:'+c.color+';color:#fff':''}"
+      onclick="setCat('${c.id}','${c.color}')" id="ct-${c.id}">
+      ${c.icon} ${c.label}
+    </button>`).join('');
+}
+
+function setCat(id, color) {
+  state.activeCat = id;
+  document.querySelectorAll('.cat-tab').forEach(t => {
+    t.classList.remove('active');
+    t.style.background = ''; t.style.borderColor = ''; t.style.color = '';
+  });
+  const btn = document.getElementById('ct-' + id);
+  btn.classList.add('active');
+  btn.style.background = color; btn.style.borderColor = color; btn.style.color = '#fff';
+  renderBizGrid(id);
+}
+
+function renderBizGrid(cat) {
+  const keys = Object.keys(BIZ).filter(k => cat === 'all' || BIZ[k].cat === cat);
+  document.getElementById('bizCount').textContent = `${keys.length}개 업종`;
+  document.getElementById('bizGrid').innerHTML = keys.map(k => {
+    const b = BIZ[k];
+    return `<div class="biz-card ${state.bizKey===k?'selected':''}" onclick="selectBiz('${k}')" id="bc-${k}">
+      <span class="biz-card-icon">${b.icon}</span>
+      <span class="biz-card-name">${b.nm || k}</span>
+    </div>`;
+  }).join('');
+}
+
+function selectBiz(key) {
+  state.bizKey = key;
+  state.biz = BIZ[key];
+  document.querySelectorAll('.biz-card').forEach(c => c.classList.remove('selected'));
+  const card = document.getElementById('bc-' + key);
+  if (card) card.classList.add('selected');
+  const chip = document.getElementById('chipBiz');
+  chip.textContent = state.biz.icon + ' ' + (state.biz.nm || key);
+  chip.classList.add('active');
+  updateStepUI();
+  checkStart();
+}
+
+function onAreaInput() {
+  state.area = document.getElementById('areaInput').value.trim();
+  checkStart();
+}
+
+function searchArea() {
+  const q = document.getElementById('areaInput').value.trim();
+  if (!q) { showToast('지역명을 입력해주세요'); return; }
+  state.area = q;
+  // Kakao SDK 미로드(로컬 개발환경) 시 텍스트만 저장하고 진행
+  if (typeof kakao === 'undefined' || !kakao.maps) {
+    state.coords = state.coords || { lat: 37.5665, lng: 126.9780 };
+    document.getElementById('chipArea').textContent = '📍 ' + q;
+    document.getElementById('chipArea').classList.add('active');
+    showToast('📍 지역 입력 완료 (지도는 배포 후 활성화)');
+    updateStepUI();
+    checkStart();
+    return;
+  }
+  if (!state.geocoder) state.geocoder = new kakao.maps.services.Geocoder();
+  state.geocoder.addressSearch(q, function(result, status) {
+    if (status === kakao.maps.services.Status.OK) {
+      state.coords = { lat: parseFloat(result[0].y), lng: parseFloat(result[0].x) };
+      document.getElementById('chipArea').textContent = '📍 ' + q;
+      document.getElementById('chipArea').classList.add('active');
+      showToast('📍 위치 확인: ' + q);
+      updateStepUI();
+      checkStart();
+    } else {
+      const ps = new kakao.maps.services.Places();
+      ps.keywordSearch(q, function(r2, s2) {
+        if (s2 === kakao.maps.services.Status.OK) {
+          state.coords = { lat: parseFloat(r2[0].y), lng: parseFloat(r2[0].x) };
+          document.getElementById('chipArea').textContent = '📍 ' + r2[0].place_name;
+          document.getElementById('chipArea').classList.add('active');
+          state.area = r2[0].place_name;
+          showToast('📍 위치 확인: ' + r2[0].place_name);
+          updateStepUI();
+          checkStart();
+        } else {
+          showToast('위치를 찾을 수 없습니다. 다시 입력해주세요.');
+        }
+      });
+    }
+  });
+}
+
+function updateStepUI() {
+  const hasBiz = !!state.bizKey;
+  const hasArea = !!state.area;
+  ['s1','s2','s3'].forEach(id => {
+    const el = document.getElementById(id);
+    el.className = 'step-num inactive';
+    el.parentElement.querySelector('.step-label').className = 'step-label inactive';
+  });
+  document.getElementById('s1').className = 'step-num ' + (hasBiz ? 'done' : 'active');
+  document.getElementById('s1').parentElement.querySelector('.step-label').className = 'step-label ' + (hasBiz ? 'done' : 'active');
+  document.getElementById('s2').className = 'step-num ' + (hasArea ? 'done' : hasBiz ? 'active' : 'inactive');
+  document.getElementById('s2').parentElement.querySelector('.step-label').className = 'step-label ' + (hasArea ? 'done' : hasBiz ? 'active' : 'inactive');
+  document.getElementById('s3').className = 'step-num ' + (hasBiz && hasArea ? 'active' : 'inactive');
+  document.getElementById('s3').parentElement.querySelector('.step-label').className = 'step-label ' + (hasBiz && hasArea ? 'active' : 'inactive');
+}
+
+function checkStart() {
+  document.getElementById('startBtn').disabled = !(state.bizKey && state.area);
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function startAnalysis() {
+  if (!state.bizKey || !state.area) return;
+  if (!state.coords) {
+    // Use default Seoul coords and search in dashboard
+    state.coords = { lat: 37.5665, lng: 126.9780 };
+  }
+  document.getElementById('landing').style.display = 'none';
+  const dash = document.getElementById('dashboard');
+  dash.style.display = 'flex';
+  document.getElementById('dashBiz').textContent = state.biz.icon + ' ' + (state.biz.nm || state.bizKey);
+  document.getElementById('dashArea').textContent = state.area;
+  state.rendered = {};
+  state.apiResult = null;
+
+  // 백그라운드로 /api/analyze 호출 (Netlify 배포 환경에서 활성화)
+  fetch(`/api/analyze?lat=${state.coords.lat}&lng=${state.coords.lng}&bizType=${encodeURIComponent(state.bizKey)}&radius=500`)
+    .then(r => r.ok ? r.json() : null)
+    .then(data => { if (data?.success) state.apiResult = data; })
+    .catch(() => {});
+
+  if (!state.kakaoMap) {
+    setTimeout(initKakaoMap, 100);
+  } else {
+    centerMap(state.coords.lat, state.coords.lng);
+    loadCompetitors();
+  }
+  switchTab('market');
+}
+
+function backToLanding() {
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('landing').style.display = 'block';
+}
+
+// ============================================================
+// KAKAO MAP
+// ============================================================
+function initKakaoMap() {
+  if (typeof kakao === 'undefined' || !kakao.maps) {
+    document.getElementById('platformMap').innerHTML =
+      `<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;color:rgba(255,255,255,.4);gap:10px;background:#0f1a2e">
+        <div style="font-size:40px">🗺</div>
+        <div style="font-size:13px;font-weight:600">지도는 배포 환경에서 활성화됩니다</div>
+        <div style="font-size:11px;opacity:.6">Kakao 개발자 콘솔에 127.0.0.1 도메인 등록 필요</div>
+        <a href="https://developers.kakao.com" target="_blank" style="color:#38bdf8;font-size:11px">developers.kakao.com →</a>
+      </div>`;
+    return;
+  }
+  const container = document.getElementById('platformMap');
+  const options = { center: new kakao.maps.LatLng(state.coords.lat, state.coords.lng), level: 4 };
+  state.kakaoMap = new kakao.maps.Map(container, options);
+  state.mapCenterMarker = new kakao.maps.Marker({ position: new kakao.maps.LatLng(state.coords.lat, state.coords.lng), map: state.kakaoMap });
+  kakao.maps.event.addListener(state.kakaoMap, 'click', function(e) {
+    const lat = e.latLng.getLat(), lng = e.latLng.getLng();
+    state.coords = { lat, lng };
+    state.mapCenterMarker.setPosition(new kakao.maps.LatLng(lat, lng));
+    Object.values(state.radiusCircles).forEach(c => c.setCenter(new kakao.maps.LatLng(lat, lng)));
+    clearCompetitors();
+    if (state.poiActive.has('comp')) loadCompetitors();
+  });
+  loadCompetitors();
+}
+
+function centerMap(lat, lng) {
+  if (!state.kakaoMap) return;
+  const pos = new kakao.maps.LatLng(lat, lng);
+  state.kakaoMap.setCenter(pos);
+  state.mapCenterMarker.setPosition(pos);
+}
+
+function toggleRadius(r) {
+  if (!state.kakaoMap) { showToast('지도가 로드된 후 사용 가능합니다'); return; }
+  const btn = document.getElementById('r' + r);
+  if (state.radiusActive.has(r)) {
+    state.radiusActive.delete(r);
+    btn.classList.remove('active');
+    if (state.radiusCircles[r]) { state.radiusCircles[r].setMap(null); delete state.radiusCircles[r]; }
+  } else {
+    state.radiusActive.add(r);
+    btn.classList.add('active');
+    const colors = { 500: '#2563eb', 1000: '#16a34a', 1500: '#ea580c' };
+    const circle = new kakao.maps.Circle({
+      center: new kakao.maps.LatLng(state.coords.lat, state.coords.lng),
+      radius: r, map: state.kakaoMap,
+      strokeWeight: 2, strokeColor: colors[r], strokeOpacity: .7, strokeStyle: 'dashed',
+      fillColor: colors[r], fillOpacity: .04
+    });
+    state.radiusCircles[r] = circle;
+  }
+}
+
+const POI_CONFIG = {
+  subway: { kw: '지하철역',  icon: '🚇', cat: 'SW8' },
+  school: { kw: '학교',      icon: '🏫', cat: 'SC4' },
+  gov:    { kw: '관공서',    icon: '🏛️', cat: 'PO3' },
+  comp:   { kw: null,        icon: null, cat: null },
+};
+
+function togglePOI(type) {
+  if (!state.kakaoMap) { showToast('지도가 로드된 후 사용 가능합니다'); return; }
+  const btn = document.getElementById('poi-' + type);
+  if (type === 'comp') {
+    if (state.poiActive.has('comp')) {
+      state.poiActive.delete('comp');
+      btn.classList.remove('active');
+      clearCompetitors();
+      document.getElementById('nearbyBadge').style.display = 'none';
+    } else {
+      state.poiActive.add('comp');
+      btn.classList.add('active');
+      loadCompetitors();
+    }
+    return;
+  }
+  if (state.poiActive.has(type)) {
+    state.poiActive.delete(type);
+    btn.classList.remove('active');
+    (state.poiMarkers[type] || []).forEach(m => m.setMap(null));
+    state.poiMarkers[type] = [];
+  } else {
+    state.poiActive.add(type);
+    btn.classList.add('active');
+    const cfg = POI_CONFIG[type];
+    const ps = new kakao.maps.services.Places();
+    ps.categorySearch(cfg.cat, function(data, status) {
+      if (status !== kakao.maps.services.Status.OK) return;
+      state.poiMarkers[type] = [];
+      (data || []).forEach(place => {
+        const pos = new kakao.maps.LatLng(place.y, place.x);
+        const content = `<div class="poi-marker">${cfg.icon} ${place.place_name}</div>`;
+        const ov = new kakao.maps.CustomOverlay({ position: pos, content, yAnchor: 1.4, zIndex: 3 });
+        ov.setMap(state.kakaoMap);
+        state.poiMarkers[type].push(ov);
+      });
+    }, { location: new kakao.maps.LatLng(state.coords.lat, state.coords.lng), radius: 1000 });
+  }
+}
+
+function loadCompetitors() {
+  if (!state.kakaoMap || !state.biz) return;
+  clearCompetitors();
+  const ps = new kakao.maps.services.Places();
+  const kw = state.biz.kw || state.bizKey;
+  const loc = new kakao.maps.LatLng(state.coords.lat, state.coords.lng);
+  ps.keywordSearch(kw, function(data, status) {
+    const badge = document.getElementById('nearbyBadge');
+    if (status === kakao.maps.services.Status.ZERO_RESULT || !data || !data.length) {
+      badge.textContent = `반경 500m 내 ${kw} 0곳 🟢 양호`;
+      badge.style.display = 'block'; return;
+    }
+    badge.textContent = `반경 500m 내 동종업소 ${data.length}곳 ${data.length>7?'🔴 과밀':data.length>4?'🟡 보통':'🟢 양호'}`;
+    badge.style.display = 'block';
+    data.forEach(place => {
+      const pos = new kakao.maps.LatLng(place.y, place.x);
+      const dist = Math.round(parseFloat(place.distance || 0));
+      const content = `<div class="comp-marker" title="${place.place_name}">${state.biz.icon} ${place.place_name.slice(0,8)}${dist?` (${dist}m)`:''}</div>`;
+      const ov = new kakao.maps.CustomOverlay({ position: pos, content, yAnchor: 1.4, zIndex: 5 });
+      ov.setMap(state.kakaoMap);
+      state.compMarkers.push(ov);
+    });
+  }, { location: loc, radius: 500, sort: kakao.maps.services.SortBy.DISTANCE });
+}
+
+function clearCompetitors() {
+  state.compMarkers.forEach(m => m.setMap(null));
+  state.compMarkers = [];
+}
+
+// ============================================================
+// TAB SWITCHING
+// ============================================================
+function switchTab(name) {
+  state.activeTab = name;
+  document.querySelectorAll('.tab-btn').forEach((b, i) => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  const tabs = ['market','profit','ai','admin','broker'];
+  const idx = tabs.indexOf(name);
+  if (idx >= 0) document.querySelectorAll('.tab-btn')[idx].classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
+  if (!state.rendered[name]) {
+    state.rendered[name] = true;
+    const renders = { market: renderMarket, profit: renderProfit, ai: renderAI, admin: renderAdmin, broker: renderBroker };
+    if (renders[name]) renders[name]();
+  }
+}
+
+// ============================================================
+// TAB: 상권분석
+// ============================================================
+function renderMarket() {
+  const b = state.biz;
+  const score = Math.round(b.rb / (b.ro) * 100);
+  const gradeColor = score >= 65 ? 'green' : score >= 45 ? 'yellow' : 'red';
+  const grade = score >= 65 ? '양호' : score >= 45 ? '보통' : '위험';
+  const compScore = Math.min(100, Math.round((b.rb - b.rp) / (b.ro - b.rp) * 100));
+  document.getElementById('tab-market').innerHTML = `
+  <div class="sec-card">
+    <div class="sec-title">📊 종합 상권 점수</div>
+    <div class="score-ring">
+      <div class="score-circle ${gradeColor}">${compScore}<span style="font-size:11px">점</span></div>
+      <div class="score-meta">
+        <div class="score-grade">${grade} — ${b.nm || state.bizKey}</div>
+        <div class="score-desc">월 예상 매출: ${b.rp.toLocaleString()}~${b.ro.toLocaleString()}만원</div>
+        <div class="score-desc">기준 창업비: ${b.cm.toLocaleString()}만원~ / BEP ${b.bm}개월</div>
+      </div>
+    </div>
+    <div class="stat-row">
+      <div class="stat-box"><div class="stat-val">${b.rb.toLocaleString()}<span style="font-size:11px">만</span></div><div class="stat-label">월 기준 매출</div></div>
+      <div class="stat-box"><div class="stat-val">${b.mc.toLocaleString()}<span style="font-size:11px">만</span></div><div class="stat-label">월 기준 고정비</div></div>
+      <div class="stat-box"><div class="stat-val">${Math.round((1-b.vc)*100)}<span style="font-size:11px">%</span></div><div class="stat-label">마진율</div></div>
+    </div>
+  </div>
+  <div class="sec-card">
+    <div class="sec-title">⏰ 시간대별 방문 패턴</div>
+    <div class="chart-wrap"><canvas id="hourChart"></canvas></div>
+  </div>
+  <div class="sec-card">
+    <div class="sec-title">📅 요일별 매출 패턴</div>
+    <div class="chart-wrap"><canvas id="dayChart"></canvas></div>
+  </div>
+  <div class="sec-card">
+    <div class="sec-title">⚠️ 주요 리스크</div>
+    ${getRiskHTML(b)}
+  </div>`;
+  setTimeout(() => {
+    buildHourChart(b);
+    buildDayChart(b);
+  }, 50);
+}
+
+function getRiskHTML(b) {
+  const risks = [
+    { icon:'🔴', title:'경쟁 밀도 확인 필요', desc:`반경 500m 내 ${b.kw} 업소 현황을 지도에서 확인하세요. 동종업소 5곳 이상 시 과밀 주의.` },
+    { icon:'⚠️', title:`초기 투자 ${b.cm.toLocaleString()}만원~`, desc:`인테리어(평당 ${b.pc}만원) + 보증금 + 권리금 합산. 수익분석 탭에서 정밀 계산하세요.` },
+    { icon:'🔶', title:`변동비율 ${Math.round(b.vc*100)}% — 원가 관리 중요`, desc:`재료비·수수료 등 변동비가 매출의 ${Math.round(b.vc*100)}%를 차지. 원가율 절감이 핵심.` },
+  ];
+  return risks.map(r => `
+    <div class="risk-item">
+      <span class="risk-icon">${r.icon}</span>
+      <div class="risk-body">
+        <div class="risk-title">${r.title}</div>
+        <div class="risk-desc">${r.desc}</div>
+      </div>
+    </div>`).join('');
+}
+
+function buildHourChart(b) {
+  const ctx = document.getElementById('hourChart');
+  if (!ctx) return;
+  if (state.hourChart) { state.hourChart.destroy(); state.hourChart = null; }
+  const hours = Array.from({length:24}, (_,i) => i);
+  const data = hours.map(h => b.pk.includes(h) ? Math.round(60 + Math.random()*35) : Math.round(8 + Math.random()*20));
+  state.hourChart = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: hours.map(h => h+'시'), datasets: [{ data, backgroundColor: hours.map(h => b.pk.includes(h) ? 'rgba(37,99,235,.75)' : 'rgba(148,163,184,.3)'), borderRadius: 3 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ x:{ ticks:{ font:{size:9}, color:'#94a3b8' }, grid:{ display:false } }, y:{ ticks:{ font:{size:9}, color:'#94a3b8' }, grid:{ color:'rgba(0,0,0,.05)' } } } }
+  });
+}
+
+function buildDayChart(b) {
+  const ctx = document.getElementById('dayChart');
+  if (!ctx) return;
+  if (state.dayChart) { state.dayChart.destroy(); state.dayChart = null; }
+  const days = ['월','화','수','목','금','토','일'];
+  const isWeekendBiz = ['술집','노래방','PC방','당구장','스크린골프','방탈출','보드게임','고깃집','횟집'].includes(state.bizKey);
+  const base = [70,72,73,74,82,95,88];
+  const data = isWeekendBiz ? [55,58,60,62,78,100,90] : base.map(v => Math.round(v + Math.random()*8 - 4));
+  state.dayChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: days, datasets: [{ data, borderColor:'rgba(13,148,136,.8)', backgroundColor:'rgba(13,148,136,.1)', tension:.4, fill:true, pointBackgroundColor:'rgba(13,148,136,.9)', pointRadius:3 }] },
+    options: { responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ x:{ ticks:{ font:{size:10}, color:'#94a3b8' }, grid:{ display:false } }, y:{ ticks:{ font:{size:9}, color:'#94a3b8' }, grid:{ color:'rgba(0,0,0,.05)' } } } }
+  });
+}
+
+// ============================================================
+// TAB: 수익분석
+// ============================================================
+function renderProfit() {
+  const b = state.biz;
+  document.getElementById('tab-profit').innerHTML = `
+  <div class="sec-card">
+    <div class="sec-title">💰 초기 투자 계획</div>
+    <button class="autofill-btn" onclick="autofillProfit()">✨ 업종 평균값 자동 입력</button>
+    <div class="profit-grid">
+      <div class="input-group">
+        <div class="input-label">보증금 (만원)</div>
+        <input class="input-field" id="p-deposit" type="number" placeholder="0" oninput="calcProfit()">
+        <div class="input-unit">전세 보증금 또는 임대 보증금</div>
+      </div>
+      <div class="input-group">
+        <div class="input-label">권리금 (만원)</div>
+        <input class="input-field" id="p-key" type="number" placeholder="0" oninput="calcProfit()">
+        <div class="input-unit">상가 권리금 (없으면 0)</div>
+      </div>
+      <div class="input-group">
+        <div class="input-label">면적 (평)</div>
+        <input class="input-field" id="p-pyung" type="number" placeholder="${b.bp}" oninput="calcProfit()">
+        <div class="input-unit">인테리어: 평당 약 ${b.pc}만원</div>
+      </div>
+      <div class="input-group">
+        <div class="input-label">월 임대료 (만원)</div>
+        <input class="input-field" id="p-rent" type="number" placeholder="0" oninput="calcProfit()">
+        <div class="input-unit">관리비 별도</div>
+      </div>
+    </div>
+  </div>
+  <div class="sec-card">
+    <div class="sec-title">📊 월별 수익 구조</div>
+    <div class="profit-grid">
+      <div class="input-group">
+        <div class="input-label">월 예상 매출 (만원)</div>
+        <input class="input-field" id="p-rev" type="number" value="${b.rb}" oninput="calcProfit()">
+        <div class="input-unit">비관 ${b.rp}만 / 낙관 ${b.ro}만</div>
+      </div>
+      <div class="input-group">
+        <div class="input-label">인건비 (만원)</div>
+        <input class="input-field" id="p-labor" type="number" value="${b.lb}" oninput="calcProfit()">
+        <div class="input-unit">본인 인건비 제외</div>
+      </div>
+      <div class="input-group">
+        <div class="input-label">관리비·공과금 (만원)</div>
+        <input class="input-field" id="p-util" type="number" value="50" oninput="calcProfit()">
+      </div>
+      <div class="input-group">
+        <div class="input-label">기타 고정비 (만원)</div>
+        <input class="input-field" id="p-etc" type="number" value="30" oninput="calcProfit()">
+        <div class="input-unit">플랫폼 수수료, 광고비 등</div>
+      </div>
+    </div>
+  </div>
+  <div class="sec-card">
+    <div class="sec-title">📈 수익성 분석 결과</div>
+    <div class="result-grid" id="profitResults">
+      <div class="result-box"><div class="result-val">—</div><div class="result-label">총 투자액</div></div>
+      <div class="result-box"><div class="result-val">—</div><div class="result-label">월 고정비</div></div>
+      <div class="result-box highlight"><div class="result-val">—</div><div class="result-label">월 순이익</div></div>
+      <div class="result-box highlight"><div class="result-val">—</div><div class="result-label">연간 ROI</div></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <div class="result-box"><div class="result-val" id="res-bep">—</div><div class="result-label">BEP 달성 월</div></div>
+      <div class="result-box"><div class="result-val" id="res-risk">—</div><div class="result-label">위험도 점수</div></div>
+    </div>
+    <div id="riskBars"></div>
+  </div>`;
+}
+
+function autofillProfit() {
+  const b = state.biz;
+  const deposit = Math.round(b.cm * 0.25 / 100) * 100;
+  const pyung = b.bp;
+  const rent = Math.round(b.mc * 0.35 / 10) * 10;
+  const key = 0;
+  document.getElementById('p-deposit').value = deposit;
+  document.getElementById('p-key').value = key;
+  document.getElementById('p-pyung').value = pyung;
+  document.getElementById('p-rent').value = rent;
+  document.getElementById('p-rev').value = b.rb;
+  document.getElementById('p-labor').value = b.lb;
+  document.getElementById('p-util').value = 50;
+  document.getElementById('p-etc').value = 30;
+  calcProfit();
+  showToast('✨ 업종 평균값으로 자동 입력했습니다');
+}
+
+function calcProfit() {
+  const v = id => parseFloat(document.getElementById(id)?.value) || 0;
+  const b = state.biz;
+  const deposit = v('p-deposit'), key = v('p-key'), pyung = v('p-pyung');
+  const rent = v('p-rent'), rev = v('p-rev'), labor = v('p-labor');
+  const util = v('p-util'), etc = v('p-etc');
+
+  const interior = pyung * b.pc;
+  const totalInvest = deposit + key + interior;
+  const fixedCost = rent + labor + util + etc;
+  const varCost = rev * b.vc;
+  const netMonthly = rev - varCost - fixedCost;
+  const roi = totalInvest > 0 ? (netMonthly * 12 / totalInvest * 100) : 0;
+  const bep = netMonthly > 0 && totalInvest > 0 ? Math.ceil(totalInvest / netMonthly) : null;
+
+  // Risk score
+  const sameCount = state.compMarkers.length || 5;
+  const compRisk = Math.min(30, sameCount * 3);
+  const rentRatio = rev > 0 ? rent / rev : 0;
+  const rentRisk = rentRatio > 0.25 ? 25 : rentRatio > 0.15 ? 14 : 6;
+  const marginRisk = netMonthly < 100 ? 25 : netMonthly < 200 ? 14 : 5;
+  const regRisk = state.bizKey === '노래방' || state.bizKey === 'PC방' || state.bizKey === '미용실' ? 15 : 8;
+  const totalRisk = compRisk + rentRisk + marginRisk + regRisk;
+  const riskColor = totalRisk >= 56 ? 'red' : totalRisk >= 31 ? 'yellow' : 'green';
+  const riskLabel = totalRisk >= 56 ? '🔴 위험' : totalRisk >= 31 ? '🟡 주의' : '🟢 양호';
+
+  const fmt = n => n > 0 ? n.toLocaleString() + '만' : n < 0 ? '-' + Math.abs(n).toLocaleString() + '만' : '0만';
+  const boxes = document.querySelectorAll('#profitResults .result-box');
+  if (boxes.length >= 4) {
+    boxes[0].querySelector('.result-val').textContent = totalInvest ? fmt(totalInvest) : '—';
+    boxes[1].querySelector('.result-val').textContent = fixedCost ? fmt(fixedCost) : '—';
+    boxes[2].querySelector('.result-val').textContent = rev ? fmt(Math.round(netMonthly)) : '—';
+    boxes[2].querySelector('.result-val').style.color = netMonthly < 0 ? 'var(--red)' : netMonthly < 100 ? 'var(--yellow)' : 'var(--green)';
+    boxes[3].querySelector('.result-val').textContent = roi ? roi.toFixed(1) + '%' : '—';
+    boxes[3].querySelector('.result-val').style.color = roi < 0 ? 'var(--red)' : roi < 10 ? 'var(--yellow)' : 'var(--blue)';
+  }
+  const bepEl = document.getElementById('res-bep');
+  if (bepEl) bepEl.textContent = bep ? bep + '개월' : bep === null ? '∞' : '—';
+  const riskEl = document.getElementById('res-risk');
+  if (riskEl) { riskEl.textContent = totalRisk + '점 ' + riskLabel; riskEl.className = 'result-val risk-score-val ' + riskColor; }
+
+  const barsEl = document.getElementById('riskBars');
+  if (barsEl) {
+    barsEl.innerHTML = [
+      { label:'경쟁 위험', val: compRisk, max:30, color:'#dc2626' },
+      { label:'임대 부담', val: rentRisk, max:25, color:'#f59e0b' },
+      { label:'마진 위험', val: marginRisk, max:25, color:'#f59e0b' },
+      { label:'규제 위험', val: regRisk, max:20, color:'#7c3aed' },
+    ].map(item => `
+      <div class="risk-bar-wrap">
+        <div class="risk-bar-label"><span>${item.label}</span><span>${item.val}/${item.max}</span></div>
+        <div class="risk-bar-track"><div class="risk-bar-fill" style="width:${(item.val/item.max*100).toFixed(0)}%;background:${item.color}"></div></div>
+      </div>`).join('');
+  }
+
+  // AI요약 탭에서 참조할 수 있도록 계산 결과 저장
+  state.profitCalc = {
+    roi, bep, riskScore: totalRisk,
+    competitionScore: Math.round(100 - compRisk / 30 * 100),
+    closeRate: state.apiResult?.sales?.closeRate || null,
+    survivalRate: state.apiResult?.trend?.survivalRate || null,
+    regulationGrade: state.apiResult?.analysis?.regulationGrade || '확인필요'
+  };
+}
+
+// ============================================================
+// TAB: AI 요약
+// ============================================================
+function renderAI() {
+  const el = document.getElementById('tab-ai');
+  el.innerHTML = `
+  <div class="ai-badge">🤖 Mock AI · 실제 LLM 연결 예정</div>
+  <button class="ai-btn" onclick="generateAI()">AI 창업 분석 리포트 생성</button>
+  <div id="aiOutput" class="ai-summary" style="display:none"></div>`;
+}
+
+async function generateAI() {
+  const b = state.biz; const area = state.area;
+  const el = document.getElementById('aiOutput');
+  el.style.display = 'block';
+  el.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:16px;color:#64748b"><div class="loading-spin"></div><span>AI 분석 생성 중...</span></div>';
+
+  const pc = state.profitCalc || {};
+  const payload = {
+    bizType: state.bizKey,
+    areaName: area,
+    riskScore: pc.riskScore ?? null,
+    roi: pc.roi ?? null,
+    bep: pc.bep ?? null,
+    competitionScore: pc.competitionScore ?? null,
+    regulationGrade: pc.regulationGrade ?? '확인필요',
+    closeRate: pc.closeRate ?? null,
+    survivalRate: pc.survivalRate ?? null
+  };
+
+  let data = null;
+  try {
+    const res = await fetch('/api/ai-summary', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) data = await res.json();
+  } catch (e) { /* fallback to local mock */ }
+
+  if (data) {
+    const riskHtml = (data.risks || []).map(r => {
+      const color = r.level === 'high' ? '#dc2626' : r.level === 'mid' ? '#f59e0b' : '#16a34a';
+      const icon  = r.level === 'high' ? '🔴' : r.level === 'mid' ? '🟡' : '🟢';
+      return `<li><span style="color:${color}">${icon} <strong>${r.title}</strong></span> — ${r.desc}</li>`;
+    }).join('');
+    const stratHtml = (data.strategies || []).map(s =>
+      `<li><strong>${s.title}</strong><br><span style="color:#64748b">${s.desc}</span></li>`
+    ).join('');
+    const summaryMd = (data.summary || '').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    el.innerHTML = `
+    <h3>📍 ${area} × ${state.bizKey} AI 분석</h3>
+    <p>${summaryMd}</p>
+    <h3>⚠️ 주요 리스크</h3><ul>${riskHtml}</ul>
+    <h3>💡 추천 전략</h3><ul>${stratHtml}</ul>
+    <h3>📋 즉시 실행 체크리스트</h3>
+    <ul>
+      <li>☐ 상권 내 동종업소 3~5곳 직접 방문 (가격·서비스·고객층 분석)</li>
+      <li>☐ 소상공인 정책자금 신청 (소상공인진흥공단, 시중은행 특별보증)</li>
+      <li>☐ 행정가이드 탭에서 인허가 요건 확인</li>
+      <li>☐ 중개사 탭에서 적합 매물 상담</li>
+    </ul>
+    <p style="font-size:11px;color:#94a3b8;margin-top:12px">※ ${data.note || '본 리포트는 공공 데이터 기반 시뮬레이션입니다.'}</p>`;
+    return;
+  }
+
+  // ── Local fallback (API 연결 전) ──
+  const margin = Math.round((1 - b.vc) * 100);
+  const netEst = Math.round(b.rb * (1 - b.vc) - b.mc);
+  el.innerHTML = `
+  <h3>📍 ${area} × ${b.nm || state.bizKey} 창업 AI 분석</h3>
+  <p><strong>${area}</strong>는 ${state.bizKey} 창업에 <strong>${netEst > 150 ? '적합한' : netEst > 50 ? '보통 수준의' : '신중한 검토가 필요한'}</strong> 상권입니다.</p>
+  <h3>💡 핵심 기회 요인</h3>
+  <ul>
+    <li>마진율 <strong>${margin}%</strong>로 ${margin >= 60 ? '업계 상위권 수준' : margin >= 40 ? '업계 평균 수준' : '원가 관리가 핵심 과제'}</li>
+    <li>월 기준 매출 <strong>${b.rb.toLocaleString()}만원</strong> 달성 시 순이익 약 <strong>${netEst.toLocaleString()}만원</strong> 예상</li>
+    <li>피크 시간대(${b.pk.slice(0,3).map(h=>h+'시').join(', ')} 외) 매출 보완 전략 마련 시 추가 수익 가능</li>
+  </ul>
+  <h3>⚠️ 주요 리스크 & 대응</h3>
+  <ul>
+    <li><strong>경쟁 과밀:</strong> 지도 탭에서 반경 500m 동종업소 확인 → 차별화 필수</li>
+    <li><strong>초기비용:</strong> 최소 ${b.cm.toLocaleString()}만원~ 확보 필요. 소상공인 정책자금 활용 검토</li>
+    <li><strong>변동비 ${Math.round(b.vc*100)}%:</strong> 매출 하락 시 고정비 부담 급증 주의</li>
+  </ul>
+  <h3>📋 즉시 실행 체크리스트</h3>
+  <ul>
+    <li>☐ 상권 내 동종업소 3~5곳 직접 방문</li>
+    <li>☐ 소상공인 정책자금 신청</li>
+    <li>☐ 행정가이드 탭에서 인허가 요건 확인</li>
+    <li>☐ 중개사 탭에서 적합 매물 상담</li>
+  </ul>
+  <p style="font-size:11px;color:#94a3b8;margin-top:12px">※ 본 리포트는 공공 데이터 기반 시뮬레이션입니다.</p>`;
+}
+
+// ============================================================
+// TAB: 행정가이드
+// ============================================================
+const ADMIN_GUIDES = {
+  food:    { law: '식품위생법 제36·37조', license: '음식점 영업허가/신고', steps: ['음식점 유형 확인 (일반/휴게)', '위생교육 이수 (6시간)', '영업허가 또는 신고 신청', '위생·소방 현장점검', '영업 개시'] },
+  retail:  { law: '유통산업발전법 / 가맹사업법', license: '영업신고 또는 가맹계약', steps: ['업종별 인허가 확인', '가맹 계약 시 정보공개서 14일 열람', '사업자등록 신청', '시설 기준 확인', '영업 개시'] },
+  beauty:  { law: '공중위생관리법 제2·6조', license: '미용업 영업신고', steps: ['미용사 면허 취득 확인 (필수)', '위생교육 이수 (3시간)', '미용업 영업신고', '시설 기준 확인 (환기 등)', '영업 개시'] },
+  health:  { law: '국민체육진흥법 / 체육시설법', license: '체육시설업 신고', steps: ['시설 유형별 신고 요건 확인', '면적·시설 기준 충족', '체육시설업 신고', '소방·안전 점검', '영업 개시'] },
+  edu:     { law: '학원의 설립·운영 및 과외교습에 관한 법률', license: '학원 설립·운영 등록', steps: ['학원 설립 신청 (교육청)', '강사 자격증 확인', '시설 기준 충족', '소방·안전 점검', '개원'] },
+  leisure: { law: '다중이용업소 안전관리법', license: '다중이용업 신고', steps: ['업종별 인허가 확인', '소방안전교육 이수', '다중이용업 신고', '소방·안전 현장점검', '영업 개시'] },
+  service: { law: '관련 개별 법령', license: '사업자등록 + 개별 신고', steps: ['업종별 인허가 확인', '사업자등록', '관련 신고·허가 취득', '시설 기준 확인', '영업 개시'] },
+};
+
+function renderAdmin() {
+  const cat = state.biz?.cat || 'food';
+  const guide = ADMIN_GUIDES[cat] || ADMIN_GUIDES.food;
+  const numColors = ['done','done','todo','todo','warn'];
+  document.getElementById('tab-admin').innerHTML = `
+  <div class="sec-card">
+    <div class="sec-title">📋 인허가 개요</div>
+    <div style="background:var(--blue-bg);border:1px solid var(--blue-light);border-radius:var(--r);padding:10px 12px;margin-bottom:10px;font-size:12px">
+      <div style="font-weight:700;color:var(--blue);margin-bottom:3px">📌 핵심 인허가</div>
+      <div style="color:var(--text2)">${guide.license}</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px">근거: ${guide.law}</div>
+    </div>
+  </div>
+  <div class="sec-card">
+    <div class="sec-title">🗺 창업 절차 흐름도</div>
+    ${guide.steps.map((step, i) => `
+    <div class="flow-step">
+      <div class="flow-num ${numColors[i]}">${i+1}</div>
+      <div class="flow-body">
+        <div class="flow-title">${step}</div>
+        <div class="flow-desc">${getStepDesc(step, cat)}</div>
+      </div>
+    </div>`).join('')}
+  </div>
+  <div class="sec-card">
+    <div class="sec-title">🔑 허가·신고 체크리스트</div>
+    <div class="permit-grid">${getPermitItems(cat)}</div>
+  </div>
+  <div class="sec-card">
+    <div class="sec-title">🏦 활용 가능한 정책자금</div>
+    ${getPolicyFunds()}
+  </div>`;
+}
+
+function getStepDesc(step, cat) {
+  const descs = {
+    '음식점 유형 확인 (일반/휴게)': '일반음식점은 허가, 휴게음식점은 신고. 주류 판매 여부로 구분.',
+    '위생교육 이수 (6시간)': '한국식품산업협회 또는 식품위생교육원. 영업신고 전 필수.',
+    '영업허가 또는 신고 신청': '관할 시·군·구청 위생과 방문 또는 정부24 온라인 신청 가능.',
+    '위생·소방 현장점검': '관할 담당자가 시설 기준 현장 확인. 미비 시 시정 지시.',
+    '영업 개시': '허가증 게시 후 영업 가능. 이후 정기 위생점검 대비.',
+  };
+  return descs[step] || '관할 담당 기관에 사전 문의 권장.';
+}
+
+function getPermitItems(cat) {
+  const items = {
+    food:    [['📋','영업허가','pass'],['🍽️','위생기준','pass'],['🔥','소방시설','warn'],['💨','환기설비','warn'],['🚗','주차장','warn'],['📐','건축기준','pass']],
+    retail:  [['📋','영업신고','pass'],['🏪','시설기준','pass'],['🔥','소방시설','pass'],['📜','가맹계약','warn'],['🚗','주차장','pass'],['📐','건축기준','pass']],
+    beauty:  [['🎓','면허증','warn'],['📋','영업신고','pass'],['🔥','소방시설','pass'],['🚿','위생설비','pass'],['📚','위생교육','warn'],['📐','건축기준','pass']],
+    health:  [['📋','시설신고','warn'],['🏋️','기구기준','warn'],['🔥','소방시설','warn'],['🚿','탈의실','warn'],['🚗','주차장','warn'],['🎓','자격증','warn']],
+    edu:     [['📋','설립등록','warn'],['🎓','강사자격','warn'],['🔥','소방시설','pass'],['📐','면적기준','warn'],['👶','아동안전','warn'],['📚','교습과목','pass']],
+    leisure: [['📋','다중이용업','warn'],['🔥','소방시설','warn'],['🚪','비상구','warn'],['🔇','방음기준','warn'],['👶','청소년','warn'],['📐','용도확인','warn']],
+    service: [['📋','사업자등록','pass'],['🏪','시설기준','pass'],['🔥','소방시설','pass'],['📐','용도지역','pass'],['💊','관련허가','warn'],['🚗','주차장','pass']],
+  };
+  return (items[cat] || items.food).map(([icon, label, status]) => `
+    <div class="permit-item">
+      <div class="permit-icon">${icon}</div>
+      <div style="font-size:11px;color:var(--text2);font-weight:600">${label}</div>
+      <div class="permit-status ${status}">${status==='pass'?'✅ 가능':status==='warn'?'⚠️ 확인':'❌ 불가'}</div>
+    </div>`).join('');
+}
+
+function getPolicyFunds() {
+  const funds = [
+    { name: '소상공인 정책자금', org: '소상공인진흥공단', rate: '연 2.0~3.5%', limit: '최대 7,000만원', tip: '창업 초기 운전자금' },
+    { name: '청년 창업 특별보증', org: '신용보증기금', rate: '보증료 0.5~1%', limit: '최대 1억원', tip: '만 39세 이하 우대' },
+    { name: '지역 신용보증', org: '지역신용보증재단', rate: '시중금리', limit: '최대 5,000만원', tip: '지역별 상이' },
+  ];
+  return funds.map(f => `
+    <div style="border-top:1px solid var(--border);padding:8px 0;display:flex;gap:10px;align-items:flex-start">
+      <div style="background:var(--blue-bg);border-radius:6px;padding:5px 8px;font-size:11px;font-weight:700;color:var(--blue);white-space:nowrap">${f.name}</div>
+      <div>
+        <div style="font-size:12px;font-weight:700;color:var(--text)">${f.org}</div>
+        <div style="font-size:11px;color:var(--muted)">${f.rate} · ${f.limit} · ${f.tip}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ============================================================
+// TAB: 중개사
+// ============================================================
+function renderBroker() {
+  const el = document.getElementById('tab-broker');
+  el.innerHTML = '<div class="loading-spin"></div>';
+  if (typeof kakao === 'undefined' || !kakao.maps) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">🏢</div>
+      <div style="font-weight:700;margin-bottom:4px">중개사 검색은 배포 환경에서 활성화됩니다</div>
+      <div style="font-size:11px">Kakao Maps API 로드 필요</div></div>
+      <div class="sec-card" style="margin-top:12px">
+        <div class="sec-title">🔑 계약 전 필수 확인사항</div>
+        <div style="font-size:12px;color:var(--text2);line-height:1.8">
+          • 용도지역 적합 여부 (LURIS 토지이용규제정보 조회)<br>
+          • 건물 건축물대장 · 등기부등본 열람<br>
+          • 인근 동종업소 현황 및 상권 분석<br>
+          • 임대차 계약서 법무사 검토 강력 권장
+        </div>
+      </div>`;
+    return;
+  }
+  if (!state.kakaoMap) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">📍</div>지도에서 위치를 먼저 선택해주세요</div>'; return; }
+  const ps = new kakao.maps.services.Places();
+  ps.keywordSearch('부동산', function(data, status) {
+    if (status !== kakao.maps.services.Status.OK || !data || !data.length) {
+      el.innerHTML = '<div class="empty-state"><div class="empty-icon">🏢</div>주변 중개사를 찾을 수 없습니다</div>';
+      return;
+    }
+    el.innerHTML = `
+    <div class="sec-card">
+      <div class="sec-title">🏢 주변 부동산 중개사</div>
+      ${data.slice(0,8).map(p => {
+        const dist = p.distance ? `${p.distance}m` : '';
+        return `<div class="broker-card">
+          <div class="broker-icon">🏢</div>
+          <div class="broker-body">
+            <div class="broker-name">${p.place_name}</div>
+            <div class="broker-addr">${p.road_address_name || p.address_name}</div>
+            ${dist ? `<div class="broker-dist">📍 ${dist}</div>` : ''}
+          </div>
+          ${p.phone ? `<a class="broker-tel" href="tel:${p.phone}">${p.phone}</a>` : ''}
+        </div>`;
+      }).join('')}
+    </div>
+    <div class="sec-card">
+      <div style="font-size:11px;color:var(--muted);line-height:1.6">
+        💡 <strong>상가 계약 전 필수 확인사항</strong><br>
+        • 용도지역 적합 여부 (LURIS 토지이용규제정보 조회)<br>
+        • 건물 건축물대장 · 등기부등본 열람<br>
+        • 인근 동종업소 현황 (지도 탭 참고)<br>
+        • 임대차 계약서 법무사 검토 권장
+      </div>
+    </div>`;
+  }, { location: new kakao.maps.LatLng(state.coords.lat, state.coords.lng), radius: 1000, sort: kakao.maps.services.SortBy.DISTANCE });
+}
+
+// ============================================================
+// UTILS
+// ============================================================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+window.addEventListener('load', initLanding);
+</script>
+</body>
+</html>
