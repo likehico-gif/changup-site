@@ -1223,8 +1223,9 @@ footer{background:var(--navy-dark);color:rgba(255,255,255,.35);font-size:12px;pa
     <div class="pb-step active" onclick="goStep(1)"><span class="pb-num">1</span>업종 선택</div><span class="pb-arrow">›</span>
     <div class="pb-step" onclick="goStep(2)"><span class="pb-num">2</span>리스크 탐지</div><span class="pb-arrow">›</span>
     <div class="pb-step" onclick="goStep(3)"><span class="pb-num">3</span>법규 검토</div><span class="pb-arrow">›</span>
-    <div class="pb-step" onclick="goStep(4)"><span class="pb-num">4</span>수익 검증</div><span class="pb-arrow">›</span>
-    <div class="pb-step" onclick="goStep(5)"><span class="pb-num">5</span>매물·상담</div>
+    <div class="pb-step" onclick="goStep(4)"><span class="pb-num">4</span>매물 선택</div><span class="pb-arrow">›</span>
+    <div class="pb-step" onclick="goStep(5)"><span class="pb-num">5</span>수익 검증</div><span class="pb-arrow">›</span>
+    <div class="pb-step" onclick="goStep(6)"><span class="pb-num">6</span>상담</div>
   </div>
 
   <!-- STEP 1 -->
@@ -1336,12 +1337,12 @@ footer{background:var(--navy-dark);color:rgba(255,255,255,.35);font-size:12px;pa
       <div class="pyung-control"><label style="font-size:13px;color:var(--muted);">예상 평수</label><input type="number" class="pyung-input" id="pyungInput" value="20" min="5" max="300" oninput="updateCosts()"><span style="font-size:13px;color:var(--muted);">평</span><span style="font-size:11px;color:var(--light);margin-left:auto;">변경 시 재계산</span></div>
       <div id="costTable"></div>
     </div>
-    <div class="sec-nav"><button class="sn-btn" onclick="goStep(2)">← 리스크 탐지</button><button class="sn-btn primary" onclick="goStep(4)">수익 검증 →</button></div>
+    <div class="sec-nav"><button class="sn-btn" onclick="goStep(2)">← 리스크 탐지</button><button class="sn-btn primary" onclick="goStep(4)">매물 선택 →</button></div>
   </div>
 
-  <!-- STEP 4 -->
-  <div class="result-section" id="step4">
-    <div class="sec-header"><div class="sec-title" style="font-size:18px;" id="step4Title"></div></div>
+  <!-- STEP 5: 수익 검증 -->
+  <div class="result-section" id="step5">
+    <div class="sec-header"><div class="sec-title" style="font-size:18px;" id="step5Title"></div></div>
     <!-- 수익 계산기 -->
     <div class="card" style="margin-bottom:16px;">
       <div class="card-title"><div class="card-icon">🧮</div>수익 계산기 <span style="font-size:11px;font-weight:500;color:var(--muted);">— 매물 조건 입력 후 ROI/BEP 실시간 계산</span></div>
@@ -1436,11 +1437,15 @@ footer{background:var(--navy-dark);color:rgba(255,255,255,.35);font-size:12px;pa
       </div>
     </div>
 
-    <div class="sec-nav"><button class="sn-btn" onclick="goStep(3)">← 법규 검토</button><button class="sn-btn primary" onclick="goStep(5)">매물 & 상담 →</button></div>
+    <div class="sec-nav"><button class="sn-btn" onclick="goStep(4)">← 매물 선택</button><button class="sn-btn primary" onclick="goStep(6)">상담 →</button></div>
   </div>
 
-  <!-- STEP 5 -->
-  <div class="result-section" id="step5">
+  <!-- STEP 4: 매물 선택 -->
+  <div class="result-section" id="step4">
+    <div class="sec-header">
+      <div class="sec-title" style="font-size:18px;" id="step4Title">🏠 추천 매물 선택</div>
+      <div class="sec-sub">선택한 매물 조건이 다음 단계 수익 계산기에 자동 반영됩니다</div>
+    </div>
     <div class="card" style="margin-bottom:16px;">
       <div class="card-title"><div class="card-icon">🏠</div>추천 매물</div>
       <div class="property-grid" id="propGrid"></div>
@@ -1451,6 +1456,11 @@ footer{background:var(--navy-dark);color:rgba(255,255,255,.35);font-size:12px;pa
       <div id="agentList" style="min-height:60px;"></div>
       <button onclick="loadNearbyAgents()" style="margin-top:10px;width:100%;padding:10px;background:var(--blue);color:#fff;border:none;border-radius:var(--r);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">📍 내 위치 기반 공인중개사 검색</button>
     </div>
+    <div class="sec-nav"><button class="sn-btn" onclick="goStep(3)">← 법규 검토</button><button class="sn-btn primary" onclick="goStep(5)">수익 검증 →</button></div>
+  </div>
+
+  <!-- STEP 6: 상담 -->
+  <div class="result-section" id="step6">
     <div class="expert-consult-card">
       <div class="ecc-eyebrow">Premium Consulting</div>
       <div class="ecc-title">전문가 1:1 리스크 정밀 진단</div>
@@ -1475,6 +1485,7 @@ footer{background:var(--navy-dark);color:rgba(255,255,255,.35);font-size:12px;pa
         <button class="ecc-btn-sec" onclick="restart()">🔄 다시 검증</button>
       </div>
     </div>
+    <div class="sec-nav"><button class="sn-btn" onclick="goStep(5)">← 수익 검증</button><button class="sn-btn primary" onclick="restart()">🔄 다시 검증</button></div>
   </div>
 </div><!-- /result-area -->
 
@@ -2062,7 +2073,7 @@ function renderStep2(){
   const hasCritical=rr.some(r=>r.level==='critical');
   if(hasCritical){
     document.getElementById('criticalBanner').style.display='block';
-    document.getElementById('criticalBanner').innerHTML=`<div class="critical-global-banner"><span class="cgb-icon">❌</span><div class="cgb-text">현재 조건으로 계약 진행 시 보증금 회수 위험 — 인허가 불가 또는 용도지역 위반 가능성 존재</div><button class="cgb-action" onclick="goStep(4)">리포트로 해결 →</button></div>`;
+    document.getElementById('criticalBanner').innerHTML=`<div class="critical-global-banner"><span class="cgb-icon">❌</span><div class="cgb-text">현재 조건으로 계약 진행 시 보증금 회수 위험 — 인허가 불가 또는 용도지역 위반 가능성 존재</div><button class="cgb-action" onclick="goStep(5)">리포트로 해결 →</button></div>`;
   }
 
   /* v6: 리스크 경고장 */
@@ -2149,9 +2160,9 @@ function updateCosts(){
   document.getElementById('costTable').innerHTML=rows.join('');
 }
 
-function renderStep4(){
+function renderStep5(){
   const d=selectedBizData,ts=calculateRiskScore(d),gi=getGradeInfo(ts,d.regulationFail);
-  document.getElementById('step4Title').innerHTML=`${d.icon} ${selectedBiz} — 수익 검증 & 최종 등급`;
+  document.getElementById('step5Title').innerHTML=`${d.icon} ${selectedBiz} — 수익 검증 & 최종 등급`;
   // 계산기 초기값 (입력 없으면 평균값 자동 주입)
   const depEl=document.getElementById('inputDeposit');
   if(depEl&&!depEl.value) fillAverageValues();
@@ -2211,7 +2222,7 @@ function renderStep4(){
   }, 2500);
 }
 
-function renderStep5(){
+function renderStep4(){
   const d=selectedBizData;
   // 공인중개사 자동 검색
   loadNearbyAgents();
@@ -2229,13 +2240,15 @@ function renderStep5(){
     </div>`).join('');
 }
 
+function renderStep6(){/* 상담 섹션은 정적 HTML */}
+
 function goStep(n){
   if(!selectedBizData&&n>1){showToast('업종을 먼저 선택해 주세요!');return}
   currentStep=n;
   document.querySelectorAll('.result-section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.pb-step').forEach((p,i)=>{p.classList.remove('active','done');if(i+1<n)p.classList.add('done');if(i+1===n)p.classList.add('active')});
   document.getElementById('step'+n).classList.add('active');
-  if(n===2)renderStep2();if(n===3)renderStep3();if(n===4)renderStep4();if(n===5)renderStep5();
+  if(n===2)renderStep2();if(n===3)renderStep3();if(n===4)renderStep4();if(n===5)renderStep5();if(n===6)renderStep6();
   document.getElementById('result-area').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
@@ -3023,10 +3036,15 @@ function renderAdminFlowchart(bizKey) {
 
 function toggleAdminStep(lsKey, idx, checked, total) {
   let arr = JSON.parse(localStorage.getItem(lsKey) || '[]');
-  if (checked) { if (!arr.includes(idx)) arr.push(idx); }
-  else { arr = arr.filter(i => i !== idx); }
+  if (checked) {
+    // 체크 시: 해당 단계 + 이전 모든 단계 자동 체크
+    for (let i = 0; i <= idx; i++) { if (!arr.includes(i)) arr.push(i); }
+  } else {
+    // 언체크 시: 해당 단계 + 이후 모든 단계 자동 언체크
+    arr = arr.filter(i => i < idx);
+  }
   localStorage.setItem(lsKey, JSON.stringify(arr));
-  if (checked && arr.length === total) showToast('🎉 모든 인허가 단계 완료!');
+  if (arr.length === total) showToast('🎉 모든 인허가 단계 완료!');
   renderAdminFlowchart(selectedBiz);
 }
 
