@@ -920,6 +920,81 @@ footer{background:var(--navy-dark);color:rgba(255,255,255,.35);font-size:12px;pa
 .trend-stat{text-align:center;padding:12px;background:var(--surface2);border-radius:var(--r)}
 .trend-stat-val{font-size:20px;font-weight:900}
 .trend-stat-lbl{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* ── 히어로 퀵 아이콘 그리드 ── */
+.quick-icon-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:18px auto 0;max-width:500px}
+@media(max-width:560px){.quick-icon-grid{grid-template-columns:repeat(4,1fr)}}
+.qi-item{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:10px 6px;border-radius:12px;background:rgba(255,255,255,.09);border:1px solid rgba(255,255,255,.14);transition:all .15s}
+.qi-item:hover{background:rgba(255,255,255,.18);transform:translateY(-2px);border-color:rgba(255,255,255,.3)}
+.qi-icon{font-size:24px;line-height:1}
+.qi-name{font-size:10px;font-weight:700;color:rgba(255,255,255,.88);white-space:nowrap}
+
+/* ── 카테고리 네비게이션 섹션 (점포라인 스타일) ── */
+.cat-nav-section{background:#fff;border-bottom:1px solid #e8edf5;position:sticky;top:64px;z-index:90;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.cat-nav-inner{max-width:960px;margin:0 auto;padding:0 20px}
+.cat-tabs{display:flex;gap:0;overflow-x:auto;border-bottom:1px solid #f1f5f9}
+.cat-tabs::-webkit-scrollbar{display:none}
+.cat-tab{display:flex;align-items:center;gap:6px;padding:14px 16px;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap;border-bottom:2.5px solid transparent;transition:all .15s;flex-shrink:0}
+.cat-tab:hover{color:var(--navy);background:var(--surface2)}
+.cat-tab.active{color:var(--blue);border-bottom-color:var(--blue);background:var(--blue-bg)}
+.tab-cnt{background:#f1f5f9;color:var(--light);font-size:10px;font-weight:700;padding:2px 6px;border-radius:100px;min-width:20px;text-align:center}
+.cat-tab.active .tab-cnt{background:var(--blue-light);color:var(--blue)}
+.cat-sub-grid{display:flex;flex-wrap:wrap;gap:8px;padding:14px 0}
+.cat-sub-item{display:flex;align-items:center;gap:8px;cursor:pointer;padding:10px 14px;border-radius:var(--r);background:var(--surface2);border:1px solid var(--border);transition:all .15s;flex-shrink:0}
+.cat-sub-item:hover{border-color:var(--blue);background:var(--blue-bg);transform:translateY(-2px);box-shadow:var(--shadow)}
+.csi-left{display:flex;flex-direction:column;align-items:center;gap:2px}
+.csi-icon{font-size:20px;line-height:1}
+.csi-name{font-size:12px;font-weight:800;color:var(--text)}
+.csi-count{font-size:10px;color:var(--blue);font-weight:600;background:var(--blue-light);padding:1px 6px;border-radius:100px}
+
+/* ── 필터바 ── */
+.filter-bar{background:#fff;padding:12px 20px;border-bottom:1px solid #e8edf5;overflow-x:auto}
+.filter-bar-inner{max-width:960px;margin:0 auto;display:flex;gap:8px;align-items:center}
+.fb-label{font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap;margin-right:4px}
+.fb-select{padding:7px 30px 7px 12px;border:1.5px solid var(--border);border-radius:100px;font-size:12px;font-weight:600;color:var(--text);background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2364748b'/%3E%3C/svg%3E") no-repeat right 10px center;cursor:pointer;transition:all .15s;white-space:nowrap;font-family:inherit;-webkit-appearance:none;flex-shrink:0}
+.fb-select:hover{border-color:var(--blue)}
+.fb-divider{width:1px;height:18px;background:var(--border);flex-shrink:0;margin:0 4px}
+.fb-btn{padding:7px 18px;background:var(--blue);color:#fff;border:none;border-radius:100px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit;flex-shrink:0;transition:background .15s}
+.fb-btn:hover{background:#1d4ed8}
+
+/* ── 매물 리스팅 섹션 ── */
+.listings-section{background:#f8fafc;padding:40px 20px 48px;border-top:1px solid #f1f5f9}
+.ls-inner{max-width:960px;margin:0 auto}
+.ls-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.ls-title-wrap{display:flex;align-items:center;gap:12px}
+.ls-title{font-size:19px;font-weight:900;color:var(--navy)}
+.ls-new-badge{font-size:10px;font-weight:800;padding:3px 8px;border-radius:100px;background:#fee2e2;color:#dc2626;animation:pulse 2s infinite}
+.ls-tabs{display:flex;gap:6px}
+.lt-tab{padding:6px 16px;border-radius:100px;font-size:12px;font-weight:700;border:1.5px solid var(--border);background:#fff;color:var(--muted);cursor:pointer;font-family:inherit;transition:all .15s}
+.lt-tab.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.listing-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
+@media(max-width:600px){.listing-grid{grid-template-columns:1fr}}
+.listing-card{background:#fff;border:1px solid var(--border);border-radius:14px;overflow:hidden;cursor:pointer;transition:all .2s;position:relative}
+.listing-card:hover{border-color:var(--blue);box-shadow:var(--shadow-lg);transform:translateY(-3px)}
+.lc-thumb{height:110px;display:flex;align-items:center;justify-content:center;font-size:44px;position:relative;background:var(--surface2)}
+.lc-badges{position:absolute;top:8px;left:8px;display:flex;gap:4px;flex-wrap:wrap}
+.lc-badge{font-size:9px;font-weight:800;padding:3px 8px;border-radius:5px;letter-spacing:.2px}
+.lc-badge-verify{background:#d1fae5;color:#065f46}
+.lc-badge-direct{background:#dbeafe;color:#1e40af}
+.lc-badge-hot{background:#fee2e2;color:#991b1b}
+.lc-badge-agent{background:#f3f4f6;color:#374151}
+.lc-body{padding:14px 14px 10px}
+.lc-biz{font-size:10px;font-weight:700;color:var(--blue);margin-bottom:3px;display:flex;align-items:center;gap:6px}
+.lc-name{font-size:14px;font-weight:800;color:var(--text);margin-bottom:2px}
+.lc-loc{font-size:11px;color:var(--muted);margin-bottom:10px;display:flex;align-items:center;gap:3px}
+.lc-prices{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px}
+.lc-price-box{background:var(--surface2);border-radius:var(--r);padding:7px 10px}
+.lc-price-label{font-size:9px;color:var(--muted);font-weight:600;margin-bottom:1px}
+.lc-price-val{font-size:13px;font-weight:800;color:var(--text)}
+.lc-price-val.highlight{color:var(--blue)}
+.lc-roi-row{display:flex;align-items:center;gap:6px}
+.lc-roi{display:inline-flex;align-items:center;gap:3px;background:var(--green-light);color:var(--green);font-size:11px;font-weight:800;padding:3px 9px;border-radius:100px}
+.lc-footer{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;border-top:1px solid var(--border);background:var(--surface2)}
+.lc-meta{font-size:10px;color:var(--muted);font-weight:600}
+.lc-cta{font-size:11px;font-weight:700;color:var(--blue)}
+.ls-view-more{text-align:center;margin-top:24px}
+.ls-more-btn{display:inline-flex;align-items:center;gap:6px;padding:10px 28px;border:1.5px solid var(--blue);border-radius:100px;font-size:13px;font-weight:700;color:var(--blue);cursor:pointer;transition:all .15s;background:#fff}
+.ls-more-btn:hover{background:var(--blue);color:#fff}
 </style>
 </head>
 <body>
@@ -980,10 +1055,10 @@ footer{background:var(--navy-dark);color:rgba(255,255,255,.35);font-size:12px;pa
       <span class="hdb-dot"></span>
       계약 직전 창업자 62%가 이 리스크를 모릅니다
     </div>
-    <h1>계약서 쓰기 전,<br><span class="accent">5분만 확인하세요.</span></h1>
-    <p class="hero-sub-v6">보증금 5천만 원을 지키는 가장 싸고 빠른 방법.</p>
-    <p class="hero-sub-bold">
-      인허가 불가 · 용도지역 위반 · 상권 과밀 —<br>
+    <h1>어떤 창업을<br><span class="accent">원하시나요?</span></h1>
+    <p class="hero-sub-v6">업종·지역 선택만으로 리스크·법규·수익성을 5분 안에 검증합니다.</p>
+    <p class="hero-sub-bold" style="font-size:12px;opacity:.75;margin-bottom:16px;">
+      인허가 불가 · 용도지역 위반 · 상권 과밀 —
       <em>계약 후 발견되면 돌이킬 수 없습니다.</em>
     </p>
     <!-- 마이크로 후기 -->
@@ -1011,8 +1086,21 @@ footer{background:var(--navy-dark);color:rgba(255,255,255,.35);font-size:12px;pa
       </button>
     </div>
 
-    <!-- 카테고리 칩 (1행) -->
-    <div class="search-tags" id="catRow">
+    <!-- 퀵 아이콘 메뉴 (10개) -->
+    <div class="quick-icon-grid" id="quickIconGrid">
+      <div class="qi-item" onclick="quickSearch('카페')"><div class="qi-icon">☕</div><div class="qi-name">카페</div></div>
+      <div class="qi-item" onclick="quickSearch('치킨집')"><div class="qi-icon">🍗</div><div class="qi-name">치킨집</div></div>
+      <div class="qi-item" onclick="quickSearch('고깃집')"><div class="qi-icon">🥩</div><div class="qi-name">고깃집</div></div>
+      <div class="qi-item" onclick="quickSearch('편의점')"><div class="qi-icon">🏪</div><div class="qi-name">편의점</div></div>
+      <div class="qi-item" onclick="quickSearch('미용실')"><div class="qi-icon">💇</div><div class="qi-name">미용실</div></div>
+      <div class="qi-item" onclick="quickSearch('헬스장')"><div class="qi-icon">💪</div><div class="qi-name">헬스장</div></div>
+      <div class="qi-item" onclick="quickSearch('분식집')"><div class="qi-icon">🍜</div><div class="qi-name">분식집</div></div>
+      <div class="qi-item" onclick="quickSearch('베이커리')"><div class="qi-icon">🥐</div><div class="qi-name">베이커리</div></div>
+      <div class="qi-item" onclick="quickSearch('노래방')"><div class="qi-icon">🎤</div><div class="qi-name">노래방</div></div>
+      <div class="qi-item" onclick="scrollToCatNav()"><div class="qi-icon">🔖</div><div class="qi-name">전체보기</div></div>
+    </div>
+    <!-- 기존 카테고리 칩 (하위 메뉴용 — hidden, JS에서 활용) -->
+    <div class="search-tags" id="catRow" style="display:none;">
       <span class="ctag" data-cat="food"    style="--cat-clr:#e85d04" onclick="selectCat('food')"   >🍽️ 음식·외식</span>
       <span class="ctag" data-cat="retail"  style="--cat-clr:#7c3aed" onclick="selectCat('retail')" >🛍️ 소매·유통</span>
       <span class="ctag" data-cat="beauty"  style="--cat-clr:#db2777" onclick="selectCat('beauty')" >💄 뷰티·미용</span>
@@ -1052,6 +1140,23 @@ footer{background:var(--navy-dark);color:rgba(255,255,255,.35);font-size:12px;pa
   </div>
 </div>
 
+<!-- ── 카테고리 네비게이션 (점포라인 스타일) ── -->
+<section class="cat-nav-section" id="catNavSection">
+  <div class="cat-nav-inner">
+    <div class="cat-tabs" id="catTabRow">
+      <div class="cat-tab active" onclick="switchCatTab('food')">🍽️ 음식·외식 <span class="tab-cnt">8</span></div>
+      <div class="cat-tab" onclick="switchCatTab('retail')">🛍️ 소매·유통 <span class="tab-cnt">7</span></div>
+      <div class="cat-tab" onclick="switchCatTab('beauty')">💄 뷰티·미용 <span class="tab-cnt">6</span></div>
+      <div class="cat-tab" onclick="switchCatTab('health')">💪 건강·스포츠 <span class="tab-cnt">6</span></div>
+      <div class="cat-tab" onclick="switchCatTab('edu')">📚 교육 <span class="tab-cnt">6</span></div>
+      <div class="cat-tab" onclick="switchCatTab('leisure')">🎮 여가·엔터 <span class="tab-cnt">6</span></div>
+      <div class="cat-tab" onclick="switchCatTab('service')">🔧 생활서비스 <span class="tab-cnt">5</span></div>
+      <div class="cat-tab" onclick="switchCatTab('other')">📂 기타업종 <span class="tab-cnt">기타</span></div>
+    </div>
+    <div class="cat-sub-grid" id="catSubGrid"></div>
+  </div>
+</section>
+
 <!-- SOCIAL PROOF / TESTIMONIALS -->
 <section style="background:#fff;padding:48px 24px 40px;border-bottom:1px solid #f1f5f9;">
   <div style="max-width:900px;margin:0 auto;">
@@ -1084,6 +1189,69 @@ footer{background:var(--navy-dark);color:rgba(255,255,255,.35);font-size:12px;pa
           <div><div style="font-size:13px;font-weight:700;color:#0f172a;">김○○ 님</div><div style="font-size:11px;color:#94a3b8;">성동구 편의점 가맹 계약</div></div>
         </div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 필터바 (메인스타트업 스타일) ── -->
+<div class="filter-bar" id="filterBar">
+  <div class="filter-bar-inner">
+    <span class="fb-label">🔍 빠른 검색</span>
+    <select class="fb-select" id="fbRegion" onchange="applyFilter()">
+      <option value="">📍 지역 전체</option>
+      <option>강남·서초</option><option>홍대·마포</option><option>성수·건대</option>
+      <option>종로·을지로</option><option>신촌·연남</option><option>부산 서면</option>
+      <option>대구 동성로</option><option>인천 부평</option>
+    </select>
+    <div class="fb-divider"></div>
+    <select class="fb-select" id="fbBudget" onchange="applyFilter()">
+      <option value="">💰 예산 전체</option>
+      <option value="0-5000">~5,000만원</option>
+      <option value="5000-10000">5천~1억</option>
+      <option value="10000-20000">1억~2억</option>
+      <option value="20000+">2억 이상</option>
+    </select>
+    <div class="fb-divider"></div>
+    <select class="fb-select" id="fbBizType" onchange="applyFilter()">
+      <option value="">🏷️ 업종 전체</option>
+      <option>카페</option><option>치킨집</option><option>고깃집</option>
+      <option>편의점</option><option>미용실</option><option>헬스장</option>
+      <option>분식집</option><option>베이커리</option><option>노래방</option>
+    </select>
+    <div class="fb-divider"></div>
+    <select class="fb-select" id="fbArea" onchange="applyFilter()">
+      <option value="">📐 면적 전체</option>
+      <option>10평 이하</option><option>10~20평</option>
+      <option>20~30평</option><option>30평 이상</option>
+    </select>
+    <div class="fb-divider"></div>
+    <select class="fb-select" id="fbType" onchange="applyFilter()">
+      <option value="">🤝 구분 전체</option>
+      <option value="direct">직거래</option>
+      <option value="agent">중개</option>
+      <option value="verified">담당자 확인</option>
+    </select>
+    <button class="fb-btn" onclick="applyFilter()">검색</button>
+  </div>
+</div>
+
+<!-- ── 최근 매물 리스팅 섹션 (메인스타트업+점포라인 결합) ── -->
+<section class="listings-section" id="listingsSection">
+  <div class="ls-inner">
+    <div class="ls-header">
+      <div class="ls-title-wrap">
+        <div class="ls-title">🔥 최근 등록 매물</div>
+        <span class="ls-new-badge">NEW</span>
+      </div>
+      <div class="ls-tabs">
+        <button class="lt-tab active" onclick="switchListingTab('recent',this)">방금 등록</button>
+        <button class="lt-tab" onclick="switchListingTab('hot',this)">급매물 추천</button>
+        <button class="lt-tab" onclick="switchListingTab('verified',this)">담당자 확인</button>
+      </div>
+    </div>
+    <div class="listing-grid" id="listingGrid"></div>
+    <div class="ls-view-more">
+      <div class="ls-more-btn" onclick="scrollToSearch()">더 많은 매물 검색 →</div>
     </div>
   </div>
 </section>
@@ -2250,6 +2418,197 @@ function goStep(n){
   document.getElementById('step'+n).classList.add('active');
   if(n===2)renderStep2();if(n===3)renderStep3();if(n===4)renderStep4();if(n===5)renderStep5();if(n===6)renderStep6();
   document.getElementById('result-area').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+// ═══════════════════════════════════════════════
+// 🆕 벤치마킹 기반 신규 기능 (점포라인+메인스타트업+오픈리스크)
+// ═══════════════════════════════════════════════
+
+/* 히어로 퀵 아이콘 → 업종 바로 검색 */
+function quickSearch(biz) {
+  document.getElementById('bizInput').value = biz;
+  selectedBiz = biz;
+  document.getElementById('searchBox').scrollIntoView({behavior:'smooth', block:'center'});
+  setTimeout(() => runAnalysis(), 300);
+}
+
+function scrollToCatNav() {
+  const el = document.getElementById('catNavSection');
+  if (el) el.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+/* 카테고리 네비 탭 데이터 */
+const CAT_NAV_DATA = {
+  food: [
+    {icon:'☕', name:'카페', count:'2,508', biz:'카페'},
+    {icon:'🍗', name:'치킨집', count:'1,203', biz:'치킨집'},
+    {icon:'🥩', name:'고깃집', count:'987', biz:'고깃집'},
+    {icon:'🍜', name:'분식집', count:'756', biz:'분식집'},
+    {icon:'🥐', name:'베이커리', count:'612', biz:'베이커리'},
+    {icon:'🍺', name:'술집', count:'543', biz:'술집'},
+    {icon:'🥡', name:'중국집', count:'421', biz:'중국집'},
+    {icon:'🍣', name:'일식·초밥', count:'389', biz:'일식당'},
+  ],
+  retail: [
+    {icon:'🏪', name:'편의점', count:'934', biz:'편의점'},
+    {icon:'🛒', name:'슈퍼마켓', count:'412', biz:'슈퍼마켓'},
+    {icon:'👗', name:'의류매장', count:'388', biz:'의류매장'},
+    {icon:'💐', name:'꽃집', count:'201', biz:'꽃집'},
+    {icon:'📚', name:'서점', count:'145', biz:'서점'},
+    {icon:'👓', name:'안경원', count:'289', biz:'안경원'},
+    {icon:'🎁', name:'문구·완구', count:'178', biz:'문구'},
+  ],
+  beauty: [
+    {icon:'💇', name:'미용실', count:'1,823', biz:'미용실'},
+    {icon:'💅', name:'네일샵', count:'978', biz:'네일샵'},
+    {icon:'🧴', name:'피부관리', count:'567', biz:'피부관리실'},
+    {icon:'👁️', name:'속눈썹샵', count:'312', biz:'속눈썹샵'},
+    {icon:'🪒', name:'면도·왁싱', count:'234', biz:'왁싱샵'},
+    {icon:'🎨', name:'타투샵', count:'156', biz:'타투샵'},
+  ],
+  health: [
+    {icon:'💪', name:'헬스장', count:'1,102', biz:'헬스장'},
+    {icon:'🧘', name:'필라테스', count:'889', biz:'필라테스'},
+    {icon:'🏊', name:'수영장', count:'234', biz:'수영장'},
+    {icon:'🥋', name:'태권도장', count:'567', biz:'태권도장'},
+    {icon:'🏋️', name:'PT샵', count:'445', biz:'PT샵'},
+    {icon:'🧗', name:'클라이밍', count:'189', biz:'클라이밍'},
+  ],
+  edu: [
+    {icon:'📖', name:'보습학원', count:'2,341', biz:'보습학원'},
+    {icon:'🎵', name:'음악학원', count:'678', biz:'음악학원'},
+    {icon:'🎨', name:'미술학원', count:'456', biz:'미술학원'},
+    {icon:'🔤', name:'영어학원', count:'1,123', biz:'영어학원'},
+    {icon:'💻', name:'코딩학원', count:'312', biz:'코딩학원'},
+    {icon:'🔢', name:'수학학원', count:'945', biz:'수학학원'},
+  ],
+  leisure: [
+    {icon:'🎤', name:'노래방', count:'876', biz:'노래방'},
+    {icon:'🖥️', name:'PC방', count:'543', biz:'PC방'},
+    {icon:'🎲', name:'보드게임카페', count:'234', biz:'보드게임카페'},
+    {icon:'🔐', name:'방탈출카페', count:'189', biz:'방탈출카페'},
+    {icon:'🎱', name:'당구장', count:'312', biz:'당구장'},
+    {icon:'🎳', name:'볼링장', count:'145', biz:'볼링장'},
+  ],
+  service: [
+    {icon:'👕', name:'세탁소', count:'567', biz:'세탁소'},
+    {icon:'🔧', name:'수리·수선', count:'345', biz:'수선집'},
+    {icon:'📷', name:'사진관', count:'234', biz:'사진관'},
+    {icon:'🏠', name:'인테리어', count:'789', biz:'인테리어'},
+    {icon:'🚗', name:'자동차관련', count:'412', biz:'자동차'},
+  ],
+  other: [
+    {icon:'🏥', name:'병원·의원', count:'1,234', biz:'병원'},
+    {icon:'🦷', name:'치과', count:'678', biz:'치과'},
+    {icon:'🏨', name:'모텔·호텔', count:'456', biz:'모텔'},
+    {icon:'⚖️', name:'법무·행정', count:'312', biz:'법무사'},
+    {icon:'📊', name:'세무·회계', count:'289', biz:'세무사'},
+    {icon:'🐾', name:'반려동물', count:'567', biz:'반려동물샵'},
+  ]
+};
+
+function switchCatTab(cat) {
+  document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+  event && event.currentTarget && event.currentTarget.classList.add('active');
+  // fallback: find by cat text pattern
+  document.querySelectorAll('.cat-tab').forEach(t => {
+    if (t.getAttribute('onclick') && t.getAttribute('onclick').includes(`'${cat}'`)) t.classList.add('active');
+  });
+  const items = CAT_NAV_DATA[cat] || [];
+  document.getElementById('catSubGrid').innerHTML = items.map(item => `
+    <div class="cat-sub-item" onclick="quickSearch('${item.biz}')">
+      <div class="csi-icon">${item.icon}</div>
+      <div class="csi-name">${item.name}</div>
+      <div class="csi-count">${item.count}건</div>
+    </div>`).join('');
+}
+
+/* 매물 리스팅 데이터 */
+const LISTING_DATA = {
+  recent: [
+    {thumb:'☕', bg:'#fef3c7', biz:'카페', name:'신논현 1층 카페 전용', loc:'강남구 논현동', deposit:'3,500만', rent:'160만/월', premium:'500만', pyung:'18평', roi:'+12.4%', type:'direct', verified:true, hot:false, time:'3분 전'},
+    {thumb:'🍗', bg:'#fff7ed', biz:'치킨집', name:'홍대 메인 상권 1층', loc:'마포구 서교동', deposit:'2,000만', rent:'200만/월', premium:'0', pyung:'12평', roi:'+8.1%', type:'agent', verified:true, hot:true, time:'15분 전'},
+    {thumb:'💇', bg:'#fce7f3', biz:'미용실', name:'강남역 인근 미용실 인수', loc:'강남구 역삼동', deposit:'1,000만', rent:'120만/월', premium:'2,000만', pyung:'10평', roi:'+15.2%', type:'direct', verified:false, hot:true, time:'28분 전'},
+    {thumb:'🥩', bg:'#fef2f2', biz:'고깃집', name:'성수 공장형 고깃집', loc:'성동구 성수동', deposit:'5,000만', rent:'280만/월', premium:'3,000만', pyung:'35평', roi:'+9.7%', type:'agent', verified:true, hot:false, time:'1시간 전'},
+    {thumb:'💪', bg:'#eff6ff', biz:'헬스장', name:'마포 고급 PT샵 인수', loc:'마포구 합정동', deposit:'3,000만', rent:'250만/월', premium:'8,000만', pyung:'80평', roi:'+18.3%', type:'direct', verified:true, hot:false, time:'2시간 전'},
+    {thumb:'🏪', bg:'#f0fdf4', biz:'편의점', name:'종로 오피스 밀집지 편의점', loc:'종로구 종로3가', deposit:'5,000만', rent:'180만/월', premium:'0', pyung:'20평', roi:'+6.2%', type:'agent', verified:true, hot:false, time:'3시간 전'},
+  ],
+  hot: [
+    {thumb:'🥐', bg:'#fef3c7', biz:'베이커리', name:'강남 핫플 베이커리 급매', loc:'강남구 청담동', deposit:'2,000만', rent:'300만/월', premium:'5,000만', pyung:'22평', roi:'+21.5%', type:'direct', verified:true, hot:true, time:'오늘'},
+    {thumb:'🎤', bg:'#f5f3ff', biz:'노래방', name:'홍대 메인거리 노래방', loc:'마포구 서교동', deposit:'3,000만', rent:'400만/월', premium:'10,000만', pyung:'120평', roi:'+16.8%', type:'direct', verified:false, hot:true, time:'어제'},
+    {thumb:'🍜', bg:'#fff7ed', biz:'분식집', name:'신촌역 앞 분식집 권리금 急', loc:'서대문구 창천동', deposit:'500만', rent:'90만/월', premium:'800만', pyung:'8평', roi:'+19.2%', type:'direct', verified:true, hot:true, time:'오늘'},
+    {thumb:'☕', bg:'#ecfdf5', biz:'카페', name:'성수동 브런치 카페 인수', loc:'성동구 성수동', deposit:'4,000만', rent:'220만/월', premium:'2,000만', pyung:'25평', roi:'+13.7%', type:'agent', verified:true, hot:true, time:'어제'},
+    {thumb:'💅', bg:'#fdf4ff', biz:'네일샵', name:'강남 갤러리아 인근 네일샵', loc:'강남구 압구정동', deposit:'1,000만', rent:'180만/월', premium:'1,500만', pyung:'15평', roi:'+22.1%', type:'direct', verified:true, hot:true, time:'오늘'},
+    {thumb:'🥡', bg:'#fff7ed', biz:'중국집', name:'종로 오래된 중화요리점', loc:'종로구 인사동', deposit:'1,000만', rent:'130만/월', premium:'3,000만', pyung:'28평', roi:'+11.3%', type:'agent', verified:false, hot:true, time:'3일 전'},
+  ],
+  verified: [
+    {thumb:'🏪', bg:'#f0fdf4', biz:'편의점', name:'강남 사거리 편의점 (담당자 직접 확인)', loc:'강남구 역삼동', deposit:'5,000만', rent:'200만/월', premium:'0', pyung:'22평', roi:'+7.4%', type:'agent', verified:true, hot:false, time:'오늘'},
+    {thumb:'💇', bg:'#fce7f3', biz:'미용실', name:'서초 살롱급 미용실 (실매물 확인)', loc:'서초구 반포동', deposit:'2,000만', rent:'150만/월', premium:'3,500만', pyung:'18평', roi:'+17.9%', type:'agent', verified:true, hot:false, time:'어제'},
+    {thumb:'🍗', bg:'#fff7ed', biz:'치킨집', name:'마포 주택가 배달 치킨집', loc:'마포구 망원동', deposit:'1,000만', rent:'80만/월', premium:'500만', pyung:'9평', roi:'+14.2%', type:'direct', verified:true, hot:false, time:'오늘'},
+    {thumb:'💪', bg:'#eff6ff', biz:'헬스장', name:'강동 주민센터 옆 헬스장', loc:'강동구 천호동', deposit:'3,000만', rent:'220만/월', premium:'5,000만', pyung:'60평', roi:'+15.6%', type:'agent', verified:true, hot:true, time:'2일 전'},
+    {thumb:'☕', bg:'#fef9c3', biz:'카페', name:'여의도 직장인 카페 (권리금 없음)', loc:'영등포구 여의도동', deposit:'4,000만', rent:'280만/월', premium:'0', pyung:'30평', roi:'+10.8%', type:'agent', verified:true, hot:false, time:'오늘'},
+    {thumb:'🥐', bg:'#fef3c7', biz:'베이커리', name:'연남동 인기 베이커리 인수', loc:'마포구 연남동', deposit:'2,500만', rent:'170만/월', premium:'4,000만', pyung:'20평', roi:'+16.4%', type:'direct', verified:true, hot:false, time:'어제'},
+  ]
+};
+
+function renderListingCards(type) {
+  const data = LISTING_DATA[type] || LISTING_DATA.recent;
+  document.getElementById('listingGrid').innerHTML = data.map(d => `
+    <div class="listing-card" onclick="quickSearch('${d.biz}')">
+      <div class="lc-thumb" style="background:${d.bg}">
+        ${d.thumb}
+        <div class="lc-badges">
+          ${d.verified ? '<span class="lc-badge lc-badge-verify">✓ 담당자확인</span>' : ''}
+          ${d.type==='direct' ? '<span class="lc-badge lc-badge-direct">직거래</span>' : '<span class="lc-badge lc-badge-agent">중개</span>'}
+          ${d.hot ? '<span class="lc-badge lc-badge-hot">🔥 급매</span>' : ''}
+        </div>
+      </div>
+      <div class="lc-body">
+        <div class="lc-biz">${d.biz} <span style="color:var(--muted);font-weight:500;">${d.time}</span></div>
+        <div class="lc-name">${d.name}</div>
+        <div class="lc-loc">📍 ${d.loc}</div>
+        <div class="lc-prices">
+          <div class="lc-price-box">
+            <div class="lc-price-label">보증금</div>
+            <div class="lc-price-val highlight">${d.deposit}</div>
+          </div>
+          <div class="lc-price-box">
+            <div class="lc-price-label">월세</div>
+            <div class="lc-price-val">${d.rent}</div>
+          </div>
+          <div class="lc-price-box">
+            <div class="lc-price-label">권리금</div>
+            <div class="lc-price-val">${d.premium === '0' ? '<span style="color:var(--green);font-weight:700;">없음</span>' : d.premium}</div>
+          </div>
+          <div class="lc-price-box">
+            <div class="lc-price-label">예상 ROI</div>
+            <div class="lc-price-val" style="color:var(--green);font-weight:800;">${d.roi}</div>
+          </div>
+        </div>
+      </div>
+      <div class="lc-footer">
+        <span class="lc-meta">📐 ${d.pyung}</span>
+        <span class="lc-cta">리스크 검증 →</span>
+      </div>
+    </div>`).join('');
+}
+
+function switchListingTab(type, el) {
+  document.querySelectorAll('.lt-tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  renderListingCards(type);
+}
+
+function applyFilter() {
+  const region = document.getElementById('fbRegion')?.value;
+  const biz = document.getElementById('fbBizType')?.value;
+  if (biz) {
+    document.getElementById('bizInput').value = biz;
+    scrollToSearch();
+  } else if (region) {
+    document.getElementById('areaInput').value = region;
+    scrollToSearch();
+  }
 }
 
 function restart(){
@@ -3421,6 +3780,8 @@ window.addEventListener('load', () => {
       if (cur < base + 8) el.textContent = cur + 1;
     }, 8000 + Math.random() * 4000);
   }
+  // 카테고리 네비 + 매물 리스팅 초기 렌더링 (외부 스크립트 완전 로드 후 실행)
+  setTimeout(() => { switchCatTab('food'); renderListingCards('recent'); }, 0);
 });
 
 /* ═══════════════════════════════════════════════

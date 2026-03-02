@@ -2,9 +2,9 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "Netlify Dev",
-      "runtimeExecutable": "netlify",
-      "runtimeArgs": ["dev", "--port", "8888"],
+      "name": "Static Dev Server",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["serve.cjs"],
       "port": 8888
     }
   ]
