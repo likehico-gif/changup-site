@@ -1812,7 +1812,7 @@ function renderStep1(){
       <div class="rec-type">${d.type}</div>
       <div class="score-row">
         <div><div class="score-label"><span>수익성</span><strong data-score="profit">${d.profitScore}점</strong></div><div class="score-bar"><div class="score-fill sf-profit" data-bar="profit" style="width:${d.profitScore}%"></div></div></div>
-        <div><div class="score-label"><span>경쟁</span><strong data-score="competition">${d.competitionScore>60?'높음':'보통'}</strong></div><div class="score-bar"><div class="score-fill sf-compete" data-bar="competition" style="width:${d.competitionScore}%"></div></div></div>
+        <div><div class="score-label"><span>경쟁</span><strong data-score="competition">${d.competitionScore>=70?'낮음':d.competitionScore>=40?'보통':'높음'}</strong></div><div class="score-bar"><div class="score-fill sf-compete" data-bar="competition" style="width:${d.competitionScore}%"></div></div></div>
         <div><div class="score-label"><span>종합 등급</span><strong data-score="total" style="color:${gi.cls==='safe'?'var(--green)':gi.cls==='caution'?'var(--yellow)':'var(--red)'}">${ts}점 ${gi.grade}</strong></div><div class="score-bar"><div class="score-fill sf-grade" data-bar="total" style="width:${ts}%"></div></div></div>
       </div>
       <div data-diff style="font-size:10px;color:${diff>=0?'var(--green)':'var(--red)'};font-weight:700;margin-bottom:10px;">${diff>=0?'▲':'▼'} ${Math.abs(diff)}점 (${d.areaName||'지역'} 평균 대비)</div>
@@ -1861,7 +1861,7 @@ function renderStep1(){
           if(pb) pb.style.width=`${realD.profitScore}%`;
           // ⑤ 경쟁
           const cs=card.querySelector('[data-score="competition"]'),cb=card.querySelector('[data-bar="competition"]');
-          if(cs) cs.textContent=realD.competitionScore>60?'높음':'보통';
+          if(cs) cs.textContent=realD.competitionScore>=70?'낮음':realD.competitionScore>=40?'보통':'높음';
           if(cb) cb.style.width=`${realD.competitionScore}%`;
           // ⑥ 종합 등급
           const ts2el=card.querySelector('[data-score="total"]'),tb=card.querySelector('[data-bar="total"]');
